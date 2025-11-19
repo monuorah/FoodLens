@@ -1,0 +1,394 @@
+//
+//  TrendsView.swift
+//  FoodLens
+//
+//  Created by Melanie & Muna on 10/29/25.
+//
+
+import SwiftUI
+
+struct TrendsView: View {
+    enum Range: String, CaseIterable, Identifiable {
+        case daily = "Daily"
+        case weekly = "Weekly"
+        case monthly = "Monthly"
+        var id: String { rawValue }
+    }
+
+    @State private var selectedRange: Range = .daily
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.fwhite.ignoresSafeArea()
+
+                VStack(alignment: .leading, spacing: 20) {
+                    // Title
+                    TitleComponent(title: "Trends")
+
+                    // Range picker
+                    Picker("Range", selection: $selectedRange) {
+                        ForEach(Range.allCases) { r in
+                            Text(r.rawValue).tag(r)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .tint(.fblack)
+
+
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            // Day header
+                            VStack(spacing: 8) {
+                                HStack {
+                                    Image(systemName: "chevron.left")
+                                        .foregroundStyle(.secondary)
+                                    
+                                    Spacer()
+                                    
+                                    Text("Today 400 cal")
+                                        .font(.system(.headline, design: .rounded))
+                                        .foregroundStyle(.secondary)
+                                    
+                                    Spacer()
+                                }
+                                
+                                // Progress bar (static visuals)
+                                ZStack(alignment: .leading) {
+                                    Capsule()
+                                        .fill(Color.secondary.opacity(0.2))
+                                        .frame(height: 8)
+                                    Capsule()
+                                        .fill(Color.fgreen)
+                                        .frame(width: 120, height: 8) // static width
+                                }
+                            }
+                            .padding(.top, 30)
+                            
+                            // Calories card (daily shows "Calories", non-daily shows "Average Calories")
+                            RoundedCard {
+                                HStack(alignment: .firstTextBaseline) {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text(selectedRange == .daily ? "Calories" : "Average Calories")
+                                            .foregroundStyle(.fblack)
+                                            .font(.system(.headline, design: .rounded))
+
+                                        Text("Goal: 2200 cal")
+                                            .foregroundStyle(.secondary)
+                                            .font(.system(.subheadline, design: .rounded))
+                                    }
+
+                                    Spacer()
+
+                                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                        Text(selectedRange == .daily ? "2134" : "2400")
+                                            .foregroundStyle(.fgreen)
+                                            .font(.system(.title2, design: .rounded))
+                                            .fontWeight(.bold)
+                                        Text("cal")
+                                            .foregroundStyle(.secondary)
+                                            .font(.system(.subheadline, design: .rounded))
+                                    }
+                                }
+
+                                if selectedRange != .daily {
+                                    // Graph placeholder
+                                    GraphPlaceholder()
+                                        .padding(.top, 10)
+                                }
+                            }
+
+                            // Macros card
+                            RoundedCard {
+                                VStack(alignment: .leading, spacing: 14) {
+                                    Text("Macros")
+                                        .foregroundStyle(.fblack)
+                                        .font(.system(.headline, design: .rounded))
+
+                                    // Carbs
+                                    MacroRow(
+                                        name: "Carbs",
+                                        goalPercent: 30,
+                                        actualPercent: selectedRange == .daily ? 40 : 45,
+                                        tint: .fgreen
+                                    )
+
+                                    // Fat
+                                    MacroRow(
+                                        name: "Fat",
+                                        goalPercent: 25,
+                                        actualPercent: selectedRange == .daily ? 35 : 25,
+                                        tint: .fred
+                                    )
+
+                                    // Protein
+                                    MacroRow(
+                                        name: "Protein",
+                                        goalPercent: 45,
+                                        actualPercent: 30,
+                                        tint: .forange
+                                    )
+                                }
+                            }
+
+                            // Weight card
+                            RoundedCard {
+                                HStack(alignment: .firstTextBaseline) {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text(selectedRange == .daily ? "Weight" : "Average Weight")
+                                            .foregroundStyle(.fblack)
+                                            .font(.system(.headline, design: .rounded))
+
+                                        Text("Goal: 150 lbs")
+                                            .foregroundStyle(.secondary)
+                                            .font(.system(.subheadline, design: .rounded))
+                                    }
+
+                                    Spacer()
+
+                                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                        Text("170")
+                                            .foregroundStyle(.fgreen)
+                                            .font(.system(.title2, design: .rounded))
+                                            .fontWeight(.bold)
+                                        Text("lbs")
+                                            .foregroundStyle(.secondary)
+                                            .font(.system(.subheadline, design: .rounded))
+                                    }
+                                }
+
+                                // Graph placeholder
+                                GraphPlaceholder()
+                                    .padding(.top, 10)
+                            }
+
+                            // Top 5 foods
+                            RoundedCard {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Top 5 Foods")
+                                        .foregroundStyle(.fblack)
+                                        .font(.system(.headline, design: .rounded))
+
+                                    VStack(spacing: 8) {
+                                        TopFoodRow(name: "Eggs", count: 25)
+                                        TopFoodRow(name: "Chicken Breast", count: 13)
+                                        TopFoodRow(name: "Brown Rice", count: 12)
+                                        TopFoodRow(name: "Broccoli", count: 12)
+                                        TopFoodRow(name: "Beef", count: 11)
+                                    }
+                                }
+                            }
+
+                            // Insights header
+                            Text("Insights")
+                                .foregroundStyle(.fblack)
+                                .font(.system(.title2, design: .rounded))
+                                .fontWeight(.semibold)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.top, 10)
+
+                            // Insight cards
+                            InsightCard(
+                                accent: .fred,
+                                title: "Low Protein Detected",
+                                subtitle: "You averaged 45g/day this week\n(Goal: 80g)",
+                                trailingIcon: "exclamationmark.triangle.fill"
+                            )
+                            InsightCard(
+                                accent: .fred,
+                                title: "High Sodium Detected",
+                                subtitle: "Exceeded 2300mg on 4/7 days\nTry reducing processed foods",
+                                trailingIcon: "exclamationmark.triangle.fill"
+                            )
+                            InsightCard(
+                                accent: .fgreen,
+                                title: "Great Fiber Intake",
+                                subtitle: "You're meeting your fiber goals",
+                                trailingIcon: "checkmark.seal.fill"
+                            )
+                            InsightCard(
+                                accent: .fblack,
+                                title: "Boost Your Protein",
+                                subtitle: "• Chicken Breast (31g per 100g)\n• Greek Yogurt (17g per cup)\n• Eggs (6g each)",
+                                trailingIcon: "questionmark.app.fill"
+                            )
+
+                            Spacer(minLength: 10)
+                        }
+                        .padding(.bottom, 24)
+                    } // ScrollView
+                }
+                .padding(35)
+            }
+        }
+    }
+}
+
+// MARK: - Helpers
+
+private struct RoundedCard<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            content
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.fwhite)
+                .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+        )
+    }
+}
+
+private struct MacroRow: View {
+    let name: String
+    let goalPercent: Int
+    let actualPercent: Int
+    let tint: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(name)
+                .foregroundStyle(.fblack)
+                .font(.system(.subheadline, design: .rounded))
+                .fontWeight(.semibold)
+
+            // Goal
+            HStack {
+                Text("Goal")
+                    .foregroundStyle(.secondary)
+                    .font(.system(.caption, design: .rounded))
+                ProgressBar(value: goalPercent, tint: tint.opacity(0.6))
+                Text("\(goalPercent)%")
+                    .foregroundStyle(.secondary)
+                    .font(.system(.caption, design: .rounded))
+            }
+
+            // Actual
+            HStack {
+                Text("Actual")
+                    .foregroundStyle(.secondary)
+                    .font(.system(.caption, design: .rounded))
+                ProgressBar(value: actualPercent, tint: tint)
+                Text("\(actualPercent)%")
+                    .foregroundStyle(.secondary)
+                    .font(.system(.caption, design: .rounded))
+            }
+        }
+    }
+}
+
+private struct ProgressBar: View {
+    let value: Int // 0...100
+    let tint: Color
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            Capsule()
+                .fill(Color.secondary.opacity(0.15))
+            Capsule()
+                .fill(tint)
+                .frame(width: nil)
+                .overlay(
+                    GeometryReader { geo in
+                        Capsule()
+                            .fill(tint)
+                            .frame(width: geo.size.width * CGFloat(min(max(value, 0), 100)) / 100.0) // should be the line that computes the width of the filled portion based on the current value 0..100
+                    }
+                )
+                .opacity(0)
+        }
+        .frame(height: 8)
+        .frame(maxWidth: .infinity)
+    }
+}
+
+private struct GraphPlaceholder: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.secondary.opacity(0.12))
+            Text("Graph goes here")
+                .foregroundStyle(.secondary)
+                .font(.system(.subheadline, design: .rounded))
+        }
+        .frame(height: 120)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+        )
+    }
+}
+
+private struct TopFoodRow: View {
+    let name: String
+    let count: Int
+
+    var body: some View {
+        HStack {
+            Text(name)
+                .foregroundStyle(.fblack)
+                .font(.system(.body, design: .rounded))
+            Spacer()
+            Text("\(count)x")
+                .foregroundStyle(.secondary)
+                .font(.system(.subheadline, design: .rounded))
+        }
+        .padding(10)
+        .background(Color.secondary.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+private struct InsightCard: View {
+    let accent: Color
+    let title: String
+    let subtitle: String
+    let trailingIcon: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Rectangle()
+                .fill(accent)
+                .frame(width: 6)
+                .cornerRadius(3)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .foregroundStyle(.fblack)
+                    .font(.system(.headline, design: .rounded))
+                Text(subtitle)
+                    .foregroundStyle(.secondary)
+                    .font(.system(.subheadline, design: .rounded))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer()
+
+            Image(systemName: trailingIcon)
+                .foregroundStyle(accent)
+                .font(.system(size: 22, weight: .semibold))
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.fwhite)
+                .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+        )
+    }
+}
+
+#Preview {
+    TrendsView()
+}
