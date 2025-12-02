@@ -8,13 +8,14 @@
 import SwiftUI
 
 struct AuthComponent: View {
-    var title: String            // "Welcome Back" / "Get Started"
-    var buttonLabel: String      // "Sign In" / "Sign Up"
-    var destination: AnyView     // navigation
-    
+    var title: String
+    var buttonLabel: String
+    var errorMessage: String?
+    var onPrimaryTap: (String, String) -> Void   // email, password
+
     @State private var email = ""
     @State private var password = ""
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -23,22 +24,29 @@ struct AuthComponent: View {
                 VStack {
                     Spacer()
                     
-                    // Title
                     TitleComponent(title: title)
                     
-                    // Fields
                     VStack(spacing: 30) {
-                        EmailPasswordComponent(email: $email, password: $password, titleStyle: .title)
+                        EmailPasswordComponent(
+                            email: $email,
+                            password: $password,
+                            titleStyle: .title
+                        )
+                        
+                        if let error = errorMessage {
+                            Text(error)
+                                .font(.footnote)
+                                .foregroundColor(.red)
+                                .multilineTextAlignment(.center)
+                        }
                     }
                     .padding(.horizontal, 25)
                     .padding(.top, 30)
                     
                     Spacer()
                     
-                    // FIXME: component?
-                    // Continue button
-                    NavigationLink {
-                        destination
+                    Button {
+                        onPrimaryTap(email, password)
                     } label: {
                         Text(buttonLabel)
                             .frame(maxWidth: .infinity)
@@ -51,14 +59,9 @@ struct AuthComponent: View {
                     }
                     
                     Spacer()
-                    
-                } // VSTACK
+                }
                 .padding()
-            } // ZSTACK
-        } // NAV
+            }
+        }
     }
-}
-
-#Preview {
-    AuthComponent(title: "Welcome Back", buttonLabel: "Sign In", destination: AnyView(HomeView()))
 }
