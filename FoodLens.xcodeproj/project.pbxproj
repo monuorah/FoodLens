@@ -24,7 +24,6 @@
 		89CA0AF12EDEE9920063F970 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		89CA0AF32EDF6CAF0063F970 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		89CA0AF72EDF753A0063F970 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-<<<<<<< HEAD
 		BAB580C32EDF8FA8007F6715 /* FoodLens.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FoodLens.app; sourceTree = BUILT_PRODUCTS_DIR; };
 
 /* End PBXFileReference section */
@@ -61,7 +60,6 @@
 				89CA0AED2EDEE8760063F970 /* Assets.xcassets */,
 				89CA0AF72EDF753A0063F970 /* Info.plist */,
 				89CA0AF32EDF6CAF0063F970 /* GoogleService-Info.plist */,
-<<<<<<< HEAD
 				BAB580C32EDF8FA8007F6715 /* FoodLens.app */,
 				89CA0DDB2EDF90DE0063F970 /* .gitignore */,
 			);
@@ -93,7 +91,6 @@
 				89CA07322EDE5F0A0063F970 /* FirebaseStorage */,
 			);
 			productName = FoodLens;
-<<<<<<< HEAD
 			productReference = BAB580C32EDF8FA8007F6715 /* FoodLens.app */;
 			productType = "com.apple.product-type.application";
 		};
