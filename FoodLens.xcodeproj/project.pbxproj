@@ -21,7 +21,7 @@
 		89351FD02EB29BDE007CCC0E /* Exceptions for "FoodLens" folder in "FoodLens" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Info.plist,
+				0.App/1.Resources/Info.plist,
 			);
 			target = 89351FBD2EB29AB7007CCC0E /* FoodLens */;
 		};
@@ -287,7 +287,7 @@
 				DEVELOPMENT_TEAM = 32PGANQPJ4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = FoodLens/Info.plist;
+				INFOPLIST_FILE = FoodLens/0.App/1.Resources/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -319,7 +319,7 @@
 				DEVELOPMENT_TEAM = 32PGANQPJ4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = FoodLens/Info.plist;
+				INFOPLIST_FILE = FoodLens/0.App/1.Resources/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

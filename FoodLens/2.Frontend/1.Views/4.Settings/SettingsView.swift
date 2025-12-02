@@ -6,23 +6,24 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 struct SettingsView: View {
-    @State private var goToLaunch: String = "no"
-    @State private var showingConfirmation = false
-    @State private var navigateToLaunchAfterAction = false
-    
+    @EnvironmentObject var authVM: AuthViewModel
+
+    @State private var showingDeleteConfirmation = false
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.fwhite.ignoresSafeArea()
-                
+
                 VStack(alignment: .leading, spacing: 20) {
                     // Title
                     TitleComponent(title: "Settings")
                         .padding(.bottom, 20)
-                    
-                    //  items
+
+                    // Items
                     VStack(spacing: 20) {
                         LinkComponent(
                             title: "Account",
@@ -44,26 +45,30 @@ struct SettingsView: View {
                             icon: "line.horizontal.3.decrease.circle",
                             destination: AnyView(MacroFiltersSettingsView())
                         )
-                    } // VSTACK
-                    
+                    }
+
                     Spacer()
 
-                    
                     // BUTTONS
                     VStack(spacing: 20) {
+
+                        // SIGN OUT
                         Button {
-                            navigateToLaunchAfterAction = true
+                            authVM.signOut()          // <- this is enough
+                            // ContentView will see user == nil and show LaunchView
                         } label: {
-                            Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                            Label("Sign Out",
+                                  systemImage: "rectangle.portrait.and.arrow.right")
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 15)
                                 .background(Color.fgray)
                                 .cornerRadius(10)
                                 .foregroundStyle(.fblack)
                         }
-                        
+
+                        // DELETE ACCOUNT
                         Button(role: .destructive) {
-                            showingConfirmation = true
+                            showingDeleteConfirmation = true
                         } label: {
                             Label("Delete Account", systemImage: "trash")
                                 .frame(maxWidth: .infinity)
@@ -76,35 +81,38 @@ struct SettingsView: View {
                     }
                     .confirmationDialog(
                         "Delete Account?",
-                        isPresented: $showingConfirmation,
+                        isPresented: $showingDeleteConfirmation,
                         titleVisibility: .visible
                     ) {
                         Button("Delete Account", role: .destructive) {
-                            // FIXME: Perform delete logic here
-                            navigateToLaunchAfterAction = true
+                            Task { await deleteAccount() }
                         }
                         Button("Cancel", role: .cancel) {}
                     } message: {
                         Text("This action cannot be undone.")
                     }
-                    .navigationDestination(isPresented: $navigateToLaunchAfterAction) {
-                        LaunchView()
-                    }
-                } // VStack
+                }
                 .padding(35)
-            } // ZStack
-        } // NavigationStack
+            }
+        }
+    }
+
+    // MARK: - Delete account helper
+
+    private func deleteAccount() async {
+        guard let user = Auth.auth().currentUser else { return }
+
+        do {
+            try await user.delete()     // deletes from Firebase Auth
+            authVM.signOut()            // clear local state -> back to LaunchView
+        } catch {
+            print("Delete account error:", error.localizedDescription)
+            authVM.authError = error.localizedDescription
+        }
     }
 }
 
-
-
-
-
-
-
-
-
 #Preview {
     SettingsView()
+        .environmentObject(AuthViewModel())
 }
