@@ -45,7 +45,7 @@ struct HomeView: View {
                                 title: "Breakfast",
                                 tint: .yellow,
                                 items: [
-                                    MealItem(left: "egg", right: "2 servings", isPlaceholder: false)
+                                    MealItem(left: "egg", right: "2 servings", isPlaceholder: false, foodItem: nil)
                                 ]
                             )
                             .padding(.horizontal, 6)
@@ -55,8 +55,8 @@ struct HomeView: View {
                                 title: "Lunch",
                                 tint: .blue,
                                 items: [
-                                    MealItem(left: "egg", right: "2 servings", isPlaceholder: false),
-                                    MealItem(left: "toast", right: "2 servings", isPlaceholder: false)
+                                    MealItem(left: "egg", right: "2 servings", isPlaceholder: false, foodItem: nil),
+                                    MealItem(left: "toast", right: "2 servings", isPlaceholder: false, foodItem: nil)
                                 ]
                             )
                             .padding(.horizontal, 6)
@@ -66,7 +66,7 @@ struct HomeView: View {
                                 title: "Dinner",
                                 tint: .brown,
                                 items: [
-                                    MealItem(left: "empty..", right: nil, isPlaceholder: true)
+                                    MealItem(left: "empty..", right: nil, isPlaceholder: true, foodItem: nil)
                                 ]
                             )
                             .padding(.horizontal, 6)
@@ -76,7 +76,7 @@ struct HomeView: View {
                                 title: "Snacks",
                                 tint: .fred,
                                 items: [
-                                    MealItem(left: "empty..", right: nil, isPlaceholder: true)
+                                    MealItem(left: "empty..", right: nil, isPlaceholder: true, foodItem: nil)
                                 ]
                             )
                             .padding(.horizontal, 6)
@@ -117,6 +117,7 @@ struct MealItem: Identifiable {
     let left: String
     let right: String?
     var isPlaceholder: Bool = false
+    let foodItem: FoodItem?
 }
 
 struct MealCardTile: View {
@@ -147,7 +148,7 @@ struct MealCardTile: View {
                 // food items
                 VStack(spacing: 10) {
                     ForEach(items) { item in
-                        MealRow(left: item.left, right: item.right, isPlaceholder: item.isPlaceholder, tint: tint)
+                        MealRow(left: item.left, right: item.right, isPlaceholder: item.isPlaceholder, tint: tint, foodItem: item.foodItem)
                     }
                 }
                 .offset(y: 40)
@@ -166,53 +167,53 @@ struct MealRow: View {
     let right: String?
     var isPlaceholder: Bool = false
     let tint: Color
+    let foodItem: FoodItem?
     
     var body: some View {
         // Decide if this row should navigate
-        let shouldNavigate = !isPlaceholder
+        let shouldNavigate = !isPlaceholder && foodItem != nil
         
-        if shouldNavigate {
+        if shouldNavigate, let foodItem = foodItem {
             NavigationLink {
-                FoodView(title: left)
+                FoodView(foodItem: foodItem)
             } label: {
-                HStack {
-                    Text(left)
-                        .foregroundStyle(tint == .fgray ? .fblack : (isPlaceholder ? .fwhite : .fblack))
-                        .font(.system(.body, design: .rounded))
-                    
-                    Spacer()
-                    
-                    if let right { // if there is a right
-                        Text(right)
-                            .foregroundStyle(tint == .fgray ? .fblack : (isPlaceholder ? .fwhite : .fblack))
-                            .font(.system(.body, design: .rounded))
-                        
-                        Image(systemName: "chevron.right")
-                            .foregroundStyle(tint == .fgray ? .fblack : (isPlaceholder ? .fwhite : .fblack))
-                            .font(.system(size: 14, weight: .semibold))
-                    }
-                }
-                .padding(12)
-                .background(.fwhite.opacity(0.5))
-                .clipShape(RoundedRectangle(cornerRadius: 16)) // so background has cornerraduys
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(.fwhite, lineWidth: 1)
-                )
+                rowContent
             }
         } else {
+            rowContent
+        }
+    }
+    
+    @ViewBuilder
+    private var rowContent: some View {
+        HStack {
             Text(left)
                 .foregroundStyle(tint == .fgray ? .fblack : (isPlaceholder ? .fwhite : .fblack))
                 .font(.system(.body, design: .rounded))
+            
+            Spacer()
+            
+            if let right {
+                Text(right)
+                    .foregroundStyle(tint == .fgray ? .fblack : (isPlaceholder ? .fwhite : .fblack))
+                    .font(.system(.body, design: .rounded))
+                
+                if !isPlaceholder && foodItem != nil {
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(tint == .fgray ? .fblack : (isPlaceholder ? .fwhite : .fblack))
+                        .font(.system(size: 14, weight: .semibold))
+                }
+            }
         }
+        .padding(12)
+        .background(.fwhite.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(.fwhite, lineWidth: 1)
+        )
     }
 }
-
-
-
-
-
-
 
 #Preview {
     HomeView()
