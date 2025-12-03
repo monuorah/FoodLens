@@ -9,9 +9,9 @@ import SwiftUI
 
 struct OnboardingPagerView: View {
     @EnvironmentObject var authVM: AuthViewModel
+    @EnvironmentObject var model: UserModel
     
     @State private var currentPage: Int = 0
-    @StateObject private var model = UserModel()
     @State private var goHome = false
     
     private let firstIndex = 0
@@ -31,29 +31,24 @@ struct OnboardingPagerView: View {
                             switch currentPage {
                             case 0:
                                 DemographicsView()
-                                    .environmentObject(model)
                             case 1:
                                 SetGoalWeightView()
-                                    .environmentObject(model)
                             case 2:
                                 SetGoalCaloriesView()
-                                    .environmentObject(model)
                             case 3:
                                 SetGoalMacrosView()
-                                    .environmentObject(model)
                             case 4:
                                 GrantAccessView()
-                                    .environmentObject(model)
                             case 5:
                                 // FINAL SCREEN -> animation + callback
                                 CreatedAccountView {
                                     // when animation finishes:
                                     authVM.completeOnboarding()     // mark as done in Firestore + local
+                                    authVM.saveCurrentUserModel()   // save full UserModel to Firestore
                                     goHome = true                   // show Tabs(Home)
                                 }
                             default:
                                 DemographicsView()
-                                    .environmentObject(model)
                             }
                         }
                         .animation(.easeInOut, value: currentPage)
@@ -89,30 +84,45 @@ struct OnboardingPagerView: View {
         }
     }
     
+    // MARK: contraints on going to next page
+    private var canContinueFromCurrentPage: Bool {
+        switch currentPage {
+        case 0: return model.isDemographicsValid
+        case 1: return model.isWeightGoalsValid
+        case 2: return model.isCaloriesValid
+        case 3: return model.isMacrosValid
+        case 4: return true      // GrantAccessView
+        default: return true
+        }
+    }
+
+    
     // MARK: - Buttons
     
     @ViewBuilder
     private var buttonsSection: some View {
         let isFirst = currentPage == firstIndex
         let isLast  = currentPage == lastIndex
-        
+        let canContinue = canContinueFromCurrentPage
+
         if isLast {
-            EmptyView() // no buttons on final animation screen
+            EmptyView()
         } else {
             HStack(spacing: 15) {
                 if !isFirst {
                     Button {
                         goTo(currentPage - 1)
                     } label: {
-                        primaryButtonLabel("Go Back")
+                        primaryButtonLabel("Go Back", enabled: true)
                     }
                 }
-                
+
                 Button {
                     goTo(currentPage + 1)
                 } label: {
-                    primaryButtonLabel("Continue")
+                    primaryButtonLabel("Continue", enabled: canContinue)
                 }
+                .disabled(!canContinue)
             }
             .padding(.horizontal, 30)
             .padding(.top, 20)
@@ -120,13 +130,13 @@ struct OnboardingPagerView: View {
         }
     }
     
-    private func primaryButtonLabel(_ text: String) -> some View {
+    private func primaryButtonLabel(_ text: String, enabled: Bool) -> some View {
         Text(text)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 15)
-            .background(Color.forange)
+            .background(enabled ? Color.forange : Color.forange.opacity(0.4))
             .cornerRadius(10)
-            .foregroundStyle(.fwhite)
+            .foregroundStyle(.fwhite.opacity(enabled ? 1.0 : 0.7))
             .fontWeight(.semibold)
     }
     
@@ -141,3 +151,4 @@ struct OnboardingPagerView: View {
         authVM.setOnboardingStep(clamped)
     }
 }
+

@@ -121,6 +121,11 @@ struct SetGoalWeightView: View {
                             .tint(.fblack)
                         }
                     }
+                    if let error = model.currentWeightErrorText {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    }
                     
                     // bodyFatPercent
                     HStack(spacing: 8) {
@@ -232,7 +237,7 @@ struct SetGoalWeightView: View {
                                                     .stroke(.secondary.opacity(0.2), lineWidth: 1)
                                             )
                                         
-                                        Text("lbs")
+                                        Text(model.selectedWeightUnit == .imperial ? "lbs" : "kg")
                                             .foregroundStyle(.secondary)
                                         
                                         Picker("Unit", selection: $model.goalRateUnit) {
@@ -282,6 +287,18 @@ struct SetGoalWeightView: View {
                                             .foregroundStyle(.secondary)
                                     }
 
+                                }
+                                
+                                if let error = model.weightGoalErrorText {
+                                    Text(error)
+                                        .font(.caption)
+                                        .foregroundColor(.red)
+                                }
+
+                                if let error = model.timeframeErrorText {
+                                    Text(error)
+                                        .font(.caption)
+                                        .foregroundColor(.red)
                                 }
                             }
                         }
