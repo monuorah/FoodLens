@@ -9,6 +9,8 @@ import SwiftUI
 import Charts
 
 struct TrendsView: View {
+    @EnvironmentObject var userModel: UserModel
+
     enum Range: String, CaseIterable, Identifiable {
         case daily = "Daily"
         case weekly = "Weekly"
@@ -18,9 +20,7 @@ struct TrendsView: View {
 
     @State private var selectedRange: Range = .daily
     @State private var todaysMeals: [LoggedMeal] = []
-    @State private var calorieGoal: Double = 2200
     @State private var weightEntries: [WeightEntry] = []
-    @State private var weightGoal: Double = 150 // lbs
 
     // Computed properties for daily stats
     private var totalCalories: Double {
@@ -58,9 +58,21 @@ struct TrendsView: View {
         return Int((totalProtein / totalMacros) * 100)
     }
 
+    private var calorieGoal: Double {
+        userModel.activeCalories ?? 2200
+    }
+
     private var calorieProgress: Double {
         guard calorieGoal > 0 else { return 0 }
         return min(totalCalories / calorieGoal, 1.0)
+    }
+
+    private var weightGoal: Double {
+        userModel.goalWeight ?? 150
+    }
+
+    private var macroGoals: (carbs: Int, fat: Int, protein: Int) {
+        (carbs: userModel.carbsPercent, fat: userModel.fatPercent, protein: userModel.proteinPercent)
     }
 
     private var currentWeight: Double {
@@ -69,6 +81,14 @@ struct TrendsView: View {
 
     private var currentWeightUnit: String {
         return WeightStorage.shared.mostRecentWeight()?.unit ?? "lbs"
+    }
+
+    private var averageWeight: Double {
+        let daysToShow = selectedRange == .weekly ? 7 : 30
+        let weights = WeightStorage.shared.weightsForLastDays(daysToShow)
+        guard !weights.isEmpty else { return currentWeight }
+        let total = weights.reduce(0.0) { $0 + $1.weight }
+        return total / Double(weights.count)
     }
 
     private var topFoods: [(name: String, count: Int)] {
@@ -278,7 +298,7 @@ struct TrendsView: View {
                                     // Carbs
                                     MacroRow(
                                         name: "Carbs",
-                                        goalPercent: 30,
+                                        goalPercent: macroGoals.carbs,
                                         actualPercent: selectedRange == .daily ? carbsPercent : averageMacroPercents.carbs,
                                         tint: .fgreen
                                     )
@@ -286,7 +306,7 @@ struct TrendsView: View {
                                     // Fat
                                     MacroRow(
                                         name: "Fat",
-                                        goalPercent: 25,
+                                        goalPercent: macroGoals.fat,
                                         actualPercent: selectedRange == .daily ? fatPercent : averageMacroPercents.fat,
                                         tint: .fred
                                     )
@@ -294,7 +314,7 @@ struct TrendsView: View {
                                     // Protein
                                     MacroRow(
                                         name: "Protein",
-                                        goalPercent: 45,
+                                        goalPercent: macroGoals.protein,
                                         actualPercent: selectedRange == .daily ? proteinPercent : averageMacroPercents.protein,
                                         tint: .forange
                                     )
@@ -317,7 +337,7 @@ struct TrendsView: View {
                                     Spacer()
 
                                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                        Text("\(Int(currentWeight))")
+                                        Text(selectedRange == .daily ? "\(Int(currentWeight))" : "\(Int(averageWeight))")
                                             .foregroundStyle(.fgreen)
                                             .font(.system(.title2, design: .rounded))
                                             .fontWeight(.bold)
@@ -403,12 +423,20 @@ struct TrendsView: View {
             .onAppear {
                 loadMeals()
             }
+            .onChange(of: selectedRange) { _, _ in
+                updateWeightEntries()
+            }
         }
     }
 
     private func loadMeals() {
         todaysMeals = MealStorage.shared.mealsForToday()
-        weightEntries = WeightStorage.shared.weightsForLastDays(30)
+        updateWeightEntries()
+    }
+
+    private func updateWeightEntries() {
+        let daysToShow = selectedRange == .weekly ? 7 : 30
+        weightEntries = WeightStorage.shared.weightsForLastDays(daysToShow)
     }
 }
 
