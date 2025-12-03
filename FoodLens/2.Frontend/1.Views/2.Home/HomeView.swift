@@ -8,9 +8,20 @@
 import SwiftUI
 
 struct HomeView: View {
+    @EnvironmentObject var model: UserModel
+    @EnvironmentObject var authVM: AuthViewModel
+    
     @State private var showLoggingSheet = false
     
-    @State private var name = "John"
+    private var greetingName: String {
+        if !model.name.isEmpty {
+            return model.name
+        } else if let name = authVM.userProfile?.name, !name.isEmpty {
+            return name
+        } else {
+            return "there"
+        }
+    }
     
     var body: some View {
         NavigationStack {
@@ -19,7 +30,7 @@ struct HomeView: View {
                 
                 VStack(alignment: .leading) {
                     // Title
-                    TitleComponent(title: "Hi, \(name) 👋")
+                    TitleComponent(title: "Hi, \(greetingName) 👋")
                     
                     Text("Today at a glance")
                         .foregroundStyle(.fblack)

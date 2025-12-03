@@ -23,12 +23,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct FoodLensApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate // code given by Firebase setup
+    
     @StateObject private var authVM = AuthViewModel()
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootRouterView()
                 .environmentObject(authVM)
         }
     }
 }
+

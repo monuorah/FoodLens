@@ -2,7 +2,7 @@
 //  SetGoalCaloriesView.swift
 //  FoodLens
 //
-//  Created by Melanie Escobar on 11/9/25.
+//  Created by Melanie & Muna on 11/9/25.
 //
 
 import SwiftUI
@@ -10,32 +10,126 @@ import SwiftUI
 struct SetGoalCaloriesView: View {
     @EnvironmentObject var model: UserModel
     
+    // Binding that edits customCalories, but shows active (custom or recommended)
+    private var customCaloriesBinding: Binding<Double> {
+        Binding<Double>(
+            get: {
+                // Prefer whatever the app is currently using
+                (model.activeCalories ?? model.recommendedCalories ?? 0).rounded()
+            },
+            set: { newValue in
+                // If they type something, treat it as custom
+                model.customCalories = newValue
+            }
+        )
+    }
+    
+    // Display strings
+    private var recommendedText: String {
+        if let value = model.recommendedCalories {
+            return value.formatted(.number.precision(.fractionLength(0)))
+        } else {
+            return "—"
+        }
+    }
+    
+    private var activeText: String {
+        if let value = model.activeCalories {
+            return value.formatted(.number.precision(.fractionLength(0)))
+        } else {
+            return "—"
+        }
+    }
+    
+    private var unitLabel: String {
+        model.selectedEnergyUnit == .kcal ? "kcal" : "kJ"
+    }
+    
     var body: some View {
         ZStack {
             Color.fwhite.ignoresSafeArea()
             
             VStack(spacing: 30) {
-                
+                // Title
                 TitleComponent(title: "Daily Calorie Target")
                 
-                Text("Recommended")
-                    .foregroundStyle(.fblue)
-                    .font(.system(.title2, design: .rounded))
-                    .bold()
+                // Recommended block (read-only)
+                VStack(spacing: 8) {
+                    Text("Recommended")
+                        .foregroundStyle(.fblue)
+                        .font(.system(.title2, design: .rounded))
+                        .bold()
+                    
+                    HStack {
+                        Text(recommendedText)
+                            .frame(width: 80)
+                            .padding(8)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(.fgray, lineWidth: 1)
+                            )
+                        
+                        Text(unitLabel)
+                            .foregroundStyle(.fblack)
+                    }
+                    
+                    Text("Based on your height, weight, age, activity level, and goal.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
                 
-                HStack {
-                    // Explicitly unwrap and format; avoid LocalizedStringKey interpolation
-                    Text(model.calories.map { $0.formatted(.number.precision(.fractionLength(0))) } ?? "—")
-                        .frame(width: 70)
+                // Editable block (what the app will use)
+                VStack(spacing: 16) {
+                    Text("Your daily target")
+                        .foregroundStyle(.fblack)
+                        .font(.system(.title3, design: .rounded))
+                        .bold()
+                    
+                    HStack {
+                        TextField(
+                            "2000",
+                            value: customCaloriesBinding,
+                            format: .number.precision(.fractionLength(0))
+                        )
+                        .keyboardType(.numberPad)
+                        .frame(width: 80)
                         .padding(8)
                         .overlay(
                             RoundedRectangle(cornerRadius: 10)
-                                .stroke(.fgray, lineWidth: 1)
+                                .stroke(.secondary.opacity(0.2), lineWidth: 1)
                         )
-                    Text("cal")
-                        .foregroundStyle(.fblack)
+                        
+                        Text(unitLabel)
+                            .foregroundStyle(.fblack.opacity(0.8))
+                    }
+                    
+                    // Little helper text showing what’s currently active
+                    Text("Currently using \(activeText) \(unitLabel.lowercased()) per day.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                    
+                    Button {
+                        model.resetCaloriesToRecommended()
+                    } label: {
+                        Text("Reset to recommended")
+                            .font(.callout)
+                            .foregroundStyle(.fblue)
+                            .frame(maxWidth: .infinity)
+                            .padding(8)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(.fblue.opacity(0.25), lineWidth: 1)
+                            )
+                    }
                 }
-                
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.fwhite)
+                        .shadow(color: .black.opacity(0.03), radius: 10, x: 0, y: 4)
+                )
                 
                 Spacer()
             }
@@ -48,66 +142,3 @@ struct SetGoalCaloriesView: View {
     SetGoalCaloriesView()
         .environmentObject(UserModel())
 }
-
-//
-//                    Picker("foodUnit", selection: $model.selectedEnergyUnit) {
-//                        Text("cal").tag(EnergyUnit.kcal)
-//                        Text("J").tag(EnergyUnit.kJ)
-//                    }
-//                    .pickerStyle(.menu)
-
-
-// Fields
-//VStack(spacing: 20) {
-//
-//    
-//    // DAILY CALORIE TARGET
-//    VStack {
-//        Text("Daily Calorie Target")
-//            .foregroundStyle(.fblack)
-//            .font(.system(.title2, design: .rounded))
-//            .bold()
-//        
-//        VStack {
-//            HStack {
-//                TextField(rec_calories, text: $model.calories)
-//                    .keyboardType(.numberPad)
-//                    .frame(width: 70)
-//                    .padding(8)
-//                    .overlay(
-//                        RoundedRectangle(cornerRadius: 10)
-//                            .stroke(.fgray, lineWidth: 1)
-//                    )
-//                Text("cal")
-//                    .foregroundStyle(.fblack)
-//            }
-//            
-//            Button {
-//                model.calories = rec_calories
-//            } label: {
-//                Text(model.calories == rec_calories ? "Recommended" : "reset to Recommended")
-//                    .foregroundStyle(.fblack)
-//                    .padding(8)
-//                    .overlay(
-//                        RoundedRectangle(cornerRadius: 10)
-//                            .stroke(model.calories == rec_calories ? .clear : .fblack, lineWidth: 1)
-//                    )
-//            }
-//            .disabled(model.calories == rec_calories)
-//        }
-//        .onAppear {
-//            if model.calories.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-//                model.calories = rec_calories
-//            }
-//        }
-//    }
-//    .padding(.vertical, 15)
-//    .frame(maxWidth: .infinity)
-//    .overlay(
-//        RoundedRectangle(cornerRadius: 10)
-//            .stroke(.fblack, lineWidth: 1)
-//    )
-//
-//
-//}
-//.padding(.horizontal, 10)

@@ -22,7 +22,11 @@ struct DemographicsView: View {
                 
                 // NAME
                 NameComponent(name: $model.name, titleStyle: .title2)
-                // add error thing here
+                if let error = model.nameErrorText {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
                 
                 // HEIGHT
                 VStack(alignment: .leading) {
@@ -40,6 +44,11 @@ struct DemographicsView: View {
                         }
                         .pickerStyle(.segmented)
                         .frame(width: 120)
+                    }
+                    if let error = model.heightErrorText {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.red)
                     }
                         
                     if model.selectedHeightUnit == .imperial {
@@ -144,6 +153,11 @@ struct DemographicsView: View {
                     Text("You must be at least 13 years old to use this app.")
                         .foregroundColor(.fblue)
                         .font(.caption)
+                    if let error = model.birthdateErrorText {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    }
                 }
                 // add error thing here
                 

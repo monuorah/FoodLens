@@ -13,19 +13,19 @@
 		89CA07332EDE5F0A0063F970 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 89CA07322EDE5F0A0063F970 /* FirebaseStorage */; };
 		89CA0AEE2EDEE8760063F970 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 89CA0AED2EDEE8760063F970 /* Assets.xcassets */; };
 		89CA0AF02EDEE95F0063F970 /* FoodLensApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89CA0AEF2EDEE95F0063F970 /* FoodLensApp.swift */; };
-		89CA0AF22EDEE9920063F970 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89CA0AF12EDEE9920063F970 /* ContentView.swift */; };
 		89CA0AF42EDF6CAF0063F970 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 89CA0AF32EDF6CAF0063F970 /* GoogleService-Info.plist */; };
 		89CA0DDD2EDF90E20063F970 /* .gitignore in Sources */ = {isa = PBXBuildFile; fileRef = 89CA0DDB2EDF90DE0063F970 /* .gitignore */; };
+		89CA13432EDFEFBF0063F970 /* RootRouterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89CA13422EDFEFBF0063F970 /* RootRouterView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		89CA0AED2EDEE8760063F970 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		89CA0AEF2EDEE95F0063F970 /* FoodLensApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodLensApp.swift; sourceTree = "<group>"; };
-		89CA0AF12EDEE9920063F970 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		89CA0AF32EDF6CAF0063F970 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		89CA0AF72EDF753A0063F970 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		89CA0DDB2EDF90DE0063F970 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
-		89CA11D22EDF9CA90063F970 /* FoodLens.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = FoodLens.app; path = "/Users/melanieescobar/programs/FoodLens/build/Debug-iphoneos/FoodLens.app"; sourceTree = "<absolute>"; };
+		89CA12E62EDFA36A0063F970 /* FoodLens.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FoodLens.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		89CA13422EDFEFBF0063F970 /* RootRouterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootRouterView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -56,11 +56,12 @@
 			children = (
 				89351FC02EB29AB7007CCC0E /* FoodLens */,
 				89CA0AEF2EDEE95F0063F970 /* FoodLensApp.swift */,
-				89CA0AF12EDEE9920063F970 /* ContentView.swift */,
+				89CA13422EDFEFBF0063F970 /* RootRouterView.swift */,
 				89CA0AED2EDEE8760063F970 /* Assets.xcassets */,
 				89CA0AF72EDF753A0063F970 /* Info.plist */,
 				89CA0AF32EDF6CAF0063F970 /* GoogleService-Info.plist */,
 				89CA0DDB2EDF90DE0063F970 /* .gitignore */,
+				89CA12E62EDFA36A0063F970 /* FoodLens.app */,
 			);
 			sourceTree = "<group>";
 		};
@@ -90,7 +91,7 @@
 				89CA07322EDE5F0A0063F970 /* FirebaseStorage */,
 			);
 			productName = FoodLens;
-			productReference = 89CA11D22EDF9CA90063F970 /* FoodLens.app */;
+			productReference = 89CA12E62EDFA36A0063F970 /* FoodLens.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -148,7 +149,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				89CA0DDD2EDF90E20063F970 /* .gitignore in Sources */,
-				89CA0AF22EDEE9920063F970 /* ContentView.swift in Sources */,
+				89CA13432EDFEFBF0063F970 /* RootRouterView.swift in Sources */,
 				89CA0AF02EDEE95F0063F970 /* FoodLensApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
