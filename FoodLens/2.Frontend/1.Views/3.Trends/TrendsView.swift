@@ -71,6 +71,127 @@ struct TrendsView: View {
         return WeightStorage.shared.mostRecentWeight()?.unit ?? "lbs"
     }
 
+    private var topFoods: [(name: String, count: Int)] {
+        // Get all meals (not just today's for better data)
+        let allMeals = MealStorage.shared.loadMeals()
+
+        // Count occurrences of each food
+        var foodCounts: [String: Int] = [:]
+        for meal in allMeals {
+            let foodName = meal.foodItem.name
+            foodCounts[foodName, default: 0] += 1
+        }
+
+        // Sort by count and take top 5
+        return foodCounts
+            .sorted { $0.value > $1.value }
+            .prefix(5)
+            .map { (name: $0.key, count: $0.value) }
+    }
+
+    private var calorieHistory: [(date: Date, calories: Double)] {
+        let calendar = Calendar.current
+        let allMeals = MealStorage.shared.loadMeals()
+
+        // Determine date range based on selected range
+        let daysToShow = selectedRange == .weekly ? 7 : 30
+        guard let startDate = calendar.date(byAdding: .day, value: -daysToShow, to: Date()) else {
+            return []
+        }
+
+        // Filter meals in range
+        let mealsInRange = allMeals.filter { $0.date >= startDate }
+
+        // Group by date and sum calories
+        var caloriesByDate: [Date: Double] = [:]
+        for meal in mealsInRange {
+            let dayStart = calendar.startOfDay(for: meal.date)
+            caloriesByDate[dayStart, default: 0] += meal.totalCalories
+        }
+
+        // Sort by date
+        return caloriesByDate
+            .map { (date: $0.key, calories: $0.value) }
+            .sorted { $0.date < $1.date }
+    }
+
+    private var averageCalories: Double {
+        let calendar = Calendar.current
+        let allMeals = MealStorage.shared.loadMeals()
+
+        // Determine date range
+        let daysToShow = selectedRange == .weekly ? 7 : 30
+        guard let startDate = calendar.date(byAdding: .day, value: -daysToShow, to: Date()) else {
+            return 0
+        }
+
+        // Filter meals in range
+        let mealsInRange = allMeals.filter { $0.date >= startDate }
+
+        // Group by date and sum calories
+        var caloriesByDate: [Date: Double] = [:]
+        for meal in mealsInRange {
+            let dayStart = calendar.startOfDay(for: meal.date)
+            caloriesByDate[dayStart, default: 0] += meal.totalCalories
+        }
+
+        // Calculate average
+        guard !caloriesByDate.isEmpty else { return 0 }
+        let totalCalories = caloriesByDate.values.reduce(0, +)
+        return totalCalories / Double(caloriesByDate.count)
+    }
+
+    private var averageMacros: (carbs: Double, fat: Double, protein: Double) {
+        let calendar = Calendar.current
+        let allMeals = MealStorage.shared.loadMeals()
+
+        // Determine date range
+        let daysToShow = selectedRange == .weekly ? 7 : 30
+        guard let startDate = calendar.date(byAdding: .day, value: -daysToShow, to: Date()) else {
+            return (0, 0, 0)
+        }
+
+        // Filter meals in range
+        let mealsInRange = allMeals.filter { $0.date >= startDate }
+
+        // Group by date and sum macros
+        var macrosByDate: [Date: (carbs: Double, fat: Double, protein: Double)] = [:]
+        for meal in mealsInRange {
+            let dayStart = calendar.startOfDay(for: meal.date)
+            let current = macrosByDate[dayStart] ?? (0, 0, 0)
+            macrosByDate[dayStart] = (
+                carbs: current.carbs + meal.totalCarbs,
+                fat: current.fat + meal.totalFat,
+                protein: current.protein + meal.totalProtein
+            )
+        }
+
+        // Calculate averages
+        guard !macrosByDate.isEmpty else { return (0, 0, 0) }
+        let totalCarbs = macrosByDate.values.reduce(0.0) { $0 + $1.carbs }
+        let totalFat = macrosByDate.values.reduce(0.0) { $0 + $1.fat }
+        let totalProtein = macrosByDate.values.reduce(0.0) { $0 + $1.protein }
+        let dayCount = Double(macrosByDate.count)
+
+        return (
+            carbs: totalCarbs / dayCount,
+            fat: totalFat / dayCount,
+            protein: totalProtein / dayCount
+        )
+    }
+
+    private var averageMacroPercents: (carbs: Int, fat: Int, protein: Int) {
+        let macros = averageMacros
+        let total = macros.carbs + macros.fat + macros.protein
+        guard total > 0 else { return (0, 0, 0) }
+
+        return (
+            carbs: Int((macros.carbs / total) * 100),
+            fat: Int((macros.fat / total) * 100),
+            protein: Int((macros.protein / total) * 100)
+        )
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -139,7 +260,7 @@ struct TrendsView: View {
                                     Spacer()
 
                                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                        Text(selectedRange == .daily ? "\(Int(totalCalories))" : "2400")
+                                        Text(selectedRange == .daily ? "\(Int(totalCalories))" : "\(Int(averageCalories))")
                                             .foregroundStyle(.fgreen)
                                             .font(.system(.title2, design: .rounded))
                                             .fontWeight(.bold)
@@ -150,9 +271,14 @@ struct TrendsView: View {
                                 }
 
                                 if selectedRange != .daily {
-                                    // Graph placeholder
-                                    GraphPlaceholder()
-                                        .padding(.top, 10)
+                                    // Calorie chart
+                                    if calorieHistory.isEmpty {
+                                        GraphPlaceholder()
+                                            .padding(.top, 10)
+                                    } else {
+                                        CalorieChart(history: calorieHistory)
+                                            .padding(.top, 10)
+                                    }
                                 }
                             }
 
@@ -167,7 +293,7 @@ struct TrendsView: View {
                                     MacroRow(
                                         name: "Carbs",
                                         goalPercent: 30,
-                                        actualPercent: selectedRange == .daily ? carbsPercent : 45,
+                                        actualPercent: selectedRange == .daily ? carbsPercent : averageMacroPercents.carbs,
                                         tint: .fgreen
                                     )
 
@@ -175,7 +301,7 @@ struct TrendsView: View {
                                     MacroRow(
                                         name: "Fat",
                                         goalPercent: 25,
-                                        actualPercent: selectedRange == .daily ? fatPercent : 25,
+                                        actualPercent: selectedRange == .daily ? fatPercent : averageMacroPercents.fat,
                                         tint: .fred
                                     )
 
@@ -183,7 +309,7 @@ struct TrendsView: View {
                                     MacroRow(
                                         name: "Protein",
                                         goalPercent: 45,
-                                        actualPercent: selectedRange == .daily ? proteinPercent : 30,
+                                        actualPercent: selectedRange == .daily ? proteinPercent : averageMacroPercents.protein,
                                         tint: .forange
                                     )
                                 }
@@ -232,12 +358,17 @@ struct TrendsView: View {
                                         .foregroundStyle(.fblack)
                                         .font(.system(.headline, design: .rounded))
 
-                                    VStack(spacing: 8) {
-                                        TopFoodRow(name: "Eggs", count: 25)
-                                        TopFoodRow(name: "Chicken Breast", count: 13)
-                                        TopFoodRow(name: "Brown Rice", count: 12)
-                                        TopFoodRow(name: "Broccoli", count: 12)
-                                        TopFoodRow(name: "Beef", count: 11)
+                                    if topFoods.isEmpty {
+                                        Text("No foods logged yet")
+                                            .foregroundStyle(.secondary)
+                                            .font(.system(.body, design: .rounded))
+                                            .padding(.vertical, 8)
+                                    } else {
+                                        VStack(spacing: 8) {
+                                            ForEach(topFoods, id: \.name) { food in
+                                                TopFoodRow(name: food.name, count: food.count)
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -473,6 +604,46 @@ private struct WeightChart: View {
                 .foregroundStyle(
                     LinearGradient(
                         colors: [Color.fgreen.opacity(0.3), Color.fgreen.opacity(0.05)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .interpolationMethod(.catmullRom)
+            }
+        }
+        .chartXAxis {
+            AxisMarks(values: .automatic(desiredCount: 5)) { value in
+                AxisGridLine()
+                AxisValueLabel(format: .dateTime.month().day())
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading)
+        }
+        .frame(height: 120)
+    }
+}
+
+private struct CalorieChart: View {
+    let history: [(date: Date, calories: Double)]
+
+    var body: some View {
+        Chart {
+            ForEach(history, id: \.date) { entry in
+                LineMark(
+                    x: .value("Date", entry.date),
+                    y: .value("Calories", entry.calories)
+                )
+                .foregroundStyle(Color.forange)
+                .interpolationMethod(.catmullRom)
+
+                AreaMark(
+                    x: .value("Date", entry.date),
+                    y: .value("Calories", entry.calories)
+                )
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.forange.opacity(0.3), Color.forange.opacity(0.05)],
                         startPoint: .top,
                         endPoint: .bottom
                     )

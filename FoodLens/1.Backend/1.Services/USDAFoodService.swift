@@ -30,7 +30,7 @@ class USDAFoodService {
     static let shared = USDAFoodService()
     
     private let baseURL = "https://api.nal.usda.gov/fdc/v1"
-    private let apiKey = "DEMO_KEY"
+    private let apiKey = Config.usdaApiKey
     
     func searchFoods(query: String) async throws -> [FoodItem] {
         let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
@@ -41,8 +41,14 @@ class USDAFoodService {
         }
         
         let (data, _) = try await URLSession.shared.data(from: url)
+
+        // Debug: Print raw response
+        if let jsonString = String(data: data, encoding: .utf8) {
+            print("📦 USDA Response: \(jsonString.prefix(500))...")
+        }
+
         let response = try JSONDecoder().decode(USDASearchResponse.self, from: data)
-        
+
         return response.foods.map { food in
             FoodItem(from: food)
         }
