@@ -8,60 +8,42 @@
 import SwiftUI
 
 struct PreferencesSettingsView: View {
-    // saved
-    @State private var saved_selectedSettingsWeightUnit: String = "lbs"
-    @State private var saved_selectedSettingsHeightUnit: String = "ft"
-    @State private var saved_selectedSettingsFoodUnit: String = "cal"
-    
-    
-    @State private var saved_isCameraEnabled = false
-    @State private var saved_isHealthKitAppEnabled = false
-    
-    // new
-    @State private var selectedSettingsWeightUnit: String = "lbs"
-    @State private var selectedSettingsHeightUnit: String = "ft"
-    @State private var selectedSettingsFoodUnit: String = "cal"
-    
-    
-    @State private var isCameraEnabled = false
-    @State private var isHealthKitAppEnabled = false
-    
-    // Derived flags
-    private var hasChanges: Bool {
-        return true
-    }
-    
+    @EnvironmentObject var model: UserModel
+    @EnvironmentObject var authVM: AuthViewModel
+
+    private var hasChanges: Bool { true } // Save just syncs current model
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.fwhite.ignoresSafeArea()
-                
+
                 VStack(spacing: 25) {
-                    // Title
                     TitleComponent(title: "Preferences")
-                    
-                    // Fields
+
                     VStack(spacing: 25) {
-                        // metrics
+                        // Units
                         HStack(spacing: 40) {
-                            Picker("weightUnit", selection: $selectedSettingsWeightUnit) {
-                                Text("lbs").tag("lbs")
-                                Text("kg").tag("kg")
+                            // Weight
+                            Picker("weightUnit", selection: $model.selectedWeightUnit) {
+                                Text("lbs").tag(UnitSystem.imperial)
+                                Text("kg").tag(UnitSystem.metric)
                             }
                             .pickerStyle(.menu)
-                            
-                            Picker("heightUnit", selection: $selectedSettingsHeightUnit) {
-                                Text("ft/in").tag("ft")
-                                Text("cm").tag("cm")
+
+                            // Height
+                            Picker("heightUnit", selection: $model.selectedHeightUnit) {
+                                Text("ft/in").tag(UnitSystem.imperial)
+                                Text("cm").tag(UnitSystem.metric)
                             }
                             .pickerStyle(.menu)
-                            
-                            Picker("foodUnit", selection: $selectedSettingsFoodUnit) {
-                                Text("cal").tag("cal")
-                                Text("J").tag("joule")
+
+                            // Energy
+                            Picker("foodUnit", selection: $model.selectedEnergyUnit) {
+                                Text("kcal").tag(EnergyUnit.kcal)
+                                Text("kJ").tag(EnergyUnit.kJ)
                             }
                             .pickerStyle(.menu)
-                            
                         }
                         .frame(maxWidth: .infinity)
                         .padding(2)
@@ -70,41 +52,35 @@ struct PreferencesSettingsView: View {
                                 .stroke(.secondary.opacity(0.2), lineWidth: 1)
                         )
                         .tint(.fblack)
-                        
-                        // grant access
+
+                        // Access toggles
                         HStack {
                             Text("Camera")
                                 .foregroundStyle(.fblack)
                                 .font(.system(.title3, design: .rounded))
-                            
+
                             Spacer()
-                            
-                            Toggle("", isOn: $isCameraEnabled)
+
+                            Toggle("", isOn: $model.cameraEnabled)
                                 .labelsHidden()
                         }
-                        
+
                         HStack {
                             Text("HealthKit App")
                                 .foregroundStyle(.fblack)
                                 .font(.system(.title3, design: .rounded))
-                            
+
                             Spacer()
-                            
-                            Toggle("", isOn: $isHealthKitAppEnabled)
+
+                            Toggle("", isOn: $model.healthEnabled)
                                 .labelsHidden()
                         }
-                    } // VSTACK
-                    
+                    }
+
                     Spacer()
-                    
+
                     Button {
-                        // Perform save, then reset snapshots so button disables again
-                        saved_selectedSettingsWeightUnit = selectedSettingsWeightUnit
-                        saved_selectedSettingsHeightUnit = selectedSettingsHeightUnit
-                        saved_selectedSettingsFoodUnit = selectedSettingsFoodUnit
-                        
-                        saved_isCameraEnabled = isCameraEnabled
-                        saved_isHealthKitAppEnabled = isHealthKitAppEnabled
+                        authVM.saveCurrentUserModel()
                     } label: {
                         Label("Save", systemImage: hasChanges ? "checkmark.icloud" : "xmark.icloud")
                             .frame(maxWidth: .infinity)
@@ -115,11 +91,9 @@ struct PreferencesSettingsView: View {
                     }
                     .disabled(!hasChanges)
                     .padding(.bottom, 30)
-                        
-                    
-                } // VSTACK
+                }
                 .padding(.horizontal, 35)
-            } // ZSTACK
-        } // NAV
+            }
+        }
     }
 }

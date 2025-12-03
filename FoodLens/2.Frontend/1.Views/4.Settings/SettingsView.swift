@@ -11,7 +11,11 @@ import FirebaseAuth
 struct SettingsView: View {
     @EnvironmentObject var authVM: AuthViewModel
 
-    @State private var showingDeleteConfirmation = false
+    // Re-auth sheet state (for delete)
+    @State private var showReauthSheet = false
+    @State private var reauthPassword: String = ""
+    @State private var isProcessingReauth = false
+    @State private var reauthLocalError: String?
 
     var body: some View {
         NavigationStack {
@@ -41,9 +45,9 @@ struct SettingsView: View {
                             destination: AnyView(PreferencesSettingsView())
                         )
                         LinkComponent(
-                            title: "Macro Filters",
-                            icon: "line.horizontal.3.decrease.circle",
-                            destination: AnyView(MacroFiltersSettingsView())
+                            title: "Goals",
+                            icon: "target",
+                            destination: AnyView(UpdateGoalsSettingsView())
                         )
                     }
 
@@ -54,8 +58,7 @@ struct SettingsView: View {
 
                         // SIGN OUT
                         Button {
-                            authVM.signOut()          // <- this is enough
-                            // ContentView will see user == nil and show LaunchView
+                            authVM.signOut()          // RootRouterView will see user == nil and show LaunchView
                         } label: {
                             Label("Sign Out",
                                   systemImage: "rectangle.portrait.and.arrow.right")
@@ -66,9 +69,12 @@ struct SettingsView: View {
                                 .foregroundStyle(.fblack)
                         }
 
-                        // DELETE ACCOUNT
+                        // DELETE ACCOUNT (always ask for password)
                         Button(role: .destructive) {
-                            showingDeleteConfirmation = true
+                            // Always show the password confirmation sheet first
+                            reauthPassword = ""
+                            reauthLocalError = nil
+                            showReauthSheet = true
                         } label: {
                             Label("Delete Account", systemImage: "trash")
                                 .frame(maxWidth: .infinity)
@@ -78,41 +84,175 @@ struct SettingsView: View {
                                 .foregroundStyle(.fwhite)
                                 .fontWeight(.semibold)
                         }
-                    }
-                    .confirmationDialog(
-                        "Delete Account?",
-                        isPresented: $showingDeleteConfirmation,
-                        titleVisibility: .visible
-                    ) {
-                        Button("Delete Account", role: .destructive) {
-                            Task { await deleteAccount() }
+
+                        // Show any auth error visibly
+                        if let error = authVM.authError, !error.isEmpty {
+                            Text(error)
+                                .font(.footnote)
+                                .foregroundColor(.red)
+                                .multilineTextAlignment(.center)
                         }
-                        Button("Cancel", role: .cancel) {}
-                    } message: {
-                        Text("This action cannot be undone.")
                     }
                 }
                 .padding(35)
             }
         }
+        // Re-authentication sheet for delete
+        .sheet(isPresented: $showReauthSheet) {
+            DeleteReauthSheet(
+                email: authVM.user?.email ?? "",
+                password: $reauthPassword,
+                isProcessing: $isProcessingReauth,
+                localError: $reauthLocalError,
+                onCancel: {
+                    // reset local state
+                    reauthPassword = ""
+                    reauthLocalError = nil
+                    showReauthSheet = false
+                },
+                onConfirm: {
+                    Task { await reauthenticateAndDelete() }
+                }
+            )
+            .presentationDetents([.height(280)])
+        }
     }
 
-    // MARK: - Delete account helper
+    // MARK: - Delete account helpers
 
-    private func deleteAccount() async {
-        guard let user = Auth.auth().currentUser else { return }
+    private func reauthenticateAndDelete() async {
+        guard let user = Auth.auth().currentUser else {
+            await MainActor.run {
+                reauthLocalError = "No authenticated user."
+            }
+            return
+        }
+        let currentEmail = user.email ?? ""
+        let uid = user.uid
+
+        await MainActor.run {
+            isProcessingReauth = true
+            reauthLocalError = nil
+            authVM.authError = nil
+        }
 
         do {
-            try await user.delete()     // deletes from Firebase Auth
-            authVM.signOut()            // clear local state -> back to LaunchView
+            // Reauthenticate with current credentials
+            let credential = EmailAuthProvider.credential(withEmail: currentEmail, password: reauthPassword)
+            try await user.reauthenticate(with: credential)
+
+            // Best-effort Firestore cleanup FIRST (while still authenticated)
+            await deleteFirestoreUser(uid: uid)
+
+            // Then delete the Firebase Auth user
+            try await user.delete()
+
+            await MainActor.run {
+                // cleanup UI state
+                reauthPassword = ""
+                showReauthSheet = false
+                isProcessingReauth = false
+                // Clear local listeners/state and route to Launch
+                authVM.signOut()
+            }
         } catch {
-            print("Delete account error:", error.localizedDescription)
-            authVM.authError = error.localizedDescription
+            await MainActor.run {
+                isProcessingReauth = false
+                let msg = (error as NSError).localizedDescription
+                reauthLocalError = msg
+                authVM.authError = msg
+            }
+        }
+    }
+
+    // Best-effort Firestore cleanup for user's document
+    private func deleteFirestoreUser(uid: String) async {
+        let userService = UserService()
+        await withCheckedContinuation { continuation in
+            userService.deleteUser(uid: uid) { _ in
+                continuation.resume()
+            }
         }
     }
 }
 
-#Preview {
-    SettingsView()
-        .environmentObject(AuthViewModel())
+private struct DeleteReauthSheet: View {
+    let email: String
+    @Binding var password: String
+    @Binding var isProcessing: Bool
+    @Binding var localError: String?
+
+    var onCancel: () -> Void
+    var onConfirm: () -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Confirm Your Password")
+                .font(.headline)
+
+            Text("For security, please re-enter your password to delete your account.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Email")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(email)
+                    .font(.body)
+                    .foregroundStyle(.fblack)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.secondary.opacity(0.2), lineWidth: 1)
+                    )
+            }
+
+            SecureField("Password", text: $password)
+                .textContentType(.password)
+                .disabled(isProcessing)
+                .padding(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(.secondary.opacity(0.2), lineWidth: 1)
+                )
+
+            if let err = localError, !err.isEmpty {
+                Text(err)
+                    .font(.footnote)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+            }
+
+            HStack {
+                Button("Cancel") { onCancel() }
+                    .disabled(isProcessing)
+
+                Spacer()
+
+                Button {
+                    onConfirm()
+                } label: {
+                    if isProcessing {
+                        ProgressView()
+                            .tint(.fwhite)
+                            .frame(width: 20, height: 20)
+                    } else {
+                        Text("Continue")
+                            .fontWeight(.semibold)
+                    }
+                }
+                .disabled(password.isEmpty || isProcessing)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 16)
+                .background((password.isEmpty || isProcessing) ? Color.fgray : Color.fred)
+                .foregroundStyle(.fwhite)
+                .cornerRadius(8)
+            }
+            .padding(.top, 4)
+        }
+        .padding(20)
+    }
 }
