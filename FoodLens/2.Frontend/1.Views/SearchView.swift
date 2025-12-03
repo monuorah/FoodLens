@@ -104,7 +104,9 @@ struct SearchView: View {
         do {
             searchResults = try await USDAFoodService.shared.searchFoods(query: query)
         } catch {
-            errorMessage = "Search failed. Try again."
+            print("❌ Search error: \(error)")
+            print("❌ Error details: \(error.localizedDescription)")
+            errorMessage = "Search failed: \(error.localizedDescription)"
             searchResults = []
         }
         

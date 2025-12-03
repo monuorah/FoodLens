@@ -9,10 +9,17 @@ import SwiftUI
 
 struct WeightSheetView: View {
     @Environment(\.dismiss) private var dismiss
-    
+
     @State private var unit: String = "imperial" // "imperial" or "metric"
     @State private var weight: String = ""
     @State private var unitLabel: String = "lbs"
+
+    private var isValidWeight: Bool {
+        guard let weightValue = Double(weight), weightValue > 0 else {
+            return false
+        }
+        return true
+    }
     
     var body: some View {
         ZStack {
@@ -54,19 +61,29 @@ struct WeightSheetView: View {
                 Spacer()
                 
                 Button {
+                    saveWeight()
                     dismiss()
                 } label: {
                     Text("Done")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .background(Color.fgreen)
+                        .background(isValidWeight ? Color.fgreen : Color.fgray)
                         .cornerRadius(10)
                         .foregroundStyle(.fwhite)
                         .fontWeight(.semibold)
                 }
+                .disabled(!isValidWeight)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
         }
+    }
+
+    private func saveWeight() {
+        guard let weightValue = Double(weight) else { return }
+
+        let unitString = unit == "imperial" ? "lbs" : "kg"
+        let entry = WeightEntry(weight: weightValue, unit: unitString)
+        WeightStorage.shared.saveWeight(entry)
     }
 }

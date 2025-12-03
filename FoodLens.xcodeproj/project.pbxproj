@@ -1,10 +1,10 @@
 // !$*UTF8*$!
 {
-    archiveVersion = 1;
-    classes = {
-    };
-    objectVersion = 77;
-    objects = {
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
 
 /* Begin PBXBuildFile section */
 		89CA072D2EDE5F0A0063F970 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 89CA072C2EDE5F0A0063F970 /* FirebaseAuth */; };
@@ -29,25 +29,25 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-        89351FC02EB29AB7007CCC0E /* FoodLens */ = {
-            isa = PBXFileSystemSynchronizedRootGroup;
-            path = FoodLens;
-            sourceTree = "<group>";
-        };
+		89351FC02EB29AB7007CCC0E /* FoodLens */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = FoodLens;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-        89351FBB2EB29AB7007CCC0E /* Frameworks */ = {
-            isa = PBXFrameworksBuildPhase;
-            buildActionMask = 2147483647;
-            files = (
-                89CA072F2EDE5F0A0063F970 /* FirebaseCore in Frameworks */,
-                89CA07332EDE5F0A0063F970 /* FirebaseStorage in Frameworks */,
-                89CA072D2EDE5F0A0063F970 /* FirebaseAuth in Frameworks */,
-                89CA07312EDE5F0A0063F970 /* FirebaseFirestore in Frameworks */,
-            );
-            runOnlyForDeploymentPostprocessing = 0;
-        };
+		89351FBB2EB29AB7007CCC0E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				89CA072F2EDE5F0A0063F970 /* FirebaseCore in Frameworks */,
+				89CA07332EDE5F0A0063F970 /* FirebaseStorage in Frameworks */,
+				89CA072D2EDE5F0A0063F970 /* FirebaseAuth in Frameworks */,
+				89CA07312EDE5F0A0063F970 /* FirebaseFirestore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -132,15 +132,15 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-        89351FBC2EB29AB7007CCC0E /* Resources */ = {
-            isa = PBXResourcesBuildPhase;
-            buildActionMask = 2147483647;
-            files = (
-                89CA0AEE2EDEE8760063F970 /* Assets.xcassets in Resources */,
-                89CA0AF42EDF6CAF0063F970 /* GoogleService-Info.plist in Resources */,
-            );
-            runOnlyForDeploymentPostprocessing = 0;
-        };
+		89351FBC2EB29AB7007CCC0E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				89CA0AEE2EDEE8760063F970 /* Assets.xcassets in Resources */,
+				89CA0AF42EDF6CAF0063F970 /* GoogleService-Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -347,60 +347,59 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-        89351FB92EB29AB7007CCC0E /* Build configuration list for PBXProject "FoodLens" */ = {
-            isa = XCConfigurationList;
-            buildConfigurations = (
-                89351FC72EB29AB9007CCC0E /* Debug */,
-                89351FC82EB29AB9007CCC0E /* Release */,
-            );
-            defaultConfigurationIsVisible = 0;
-            defaultConfigurationName = Release;
-        };
-        89351FC92EB29AB9007CCC0E /* Build configuration list for PBXNativeTarget "FoodLens" */ = {
-            isa = XCConfigurationList;
-            buildConfigurations = (
-                89351FCA2EB29AB9007CCC0E /* Debug */,
-                89351FCB2EB29AB9007CCC0E /* Release */,
-            );
-            defaultConfigurationIsVisible = 0;
-            defaultConfigurationName = Release;
-        };
+		89351FB92EB29AB7007CCC0E /* Build configuration list for PBXProject "FoodLens" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				89351FC72EB29AB9007CCC0E /* Debug */,
+				89351FC82EB29AB9007CCC0E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		89351FC92EB29AB9007CCC0E /* Build configuration list for PBXNativeTarget "FoodLens" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				89351FCA2EB29AB9007CCC0E /* Debug */,
+				89351FCB2EB29AB9007CCC0E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-        89CA072B2EDE5F0A0063F970 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
-            isa = XCRemoteSwiftPackageReference;
-            repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
-            requirement = {
-                kind = upToNextMajorVersion;
-                minimumVersion = 12.6.0;
-            };
-        };
+		89CA072B2EDE5F0A0063F970 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.6.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-        89CA072C2EDE5F0A0063F970 /* FirebaseAuth */ = {
-            isa = XCSwiftPackageProductDependency;
-            package = 89CA072B2EDE5F0A0063F970 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-            productName = FirebaseAuth;
-        };
-        89CA072E2EDE5F0A0063F970 /* FirebaseCore */ = {
-            isa = XCSwiftPackageProductDependency;
-            package = 89CA072B2EDE5F0A0063F970 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-            productName = FirebaseCore;
-        };
-        89CA07302EDE5F0A0063F970 /* FirebaseFirestore */ = {
-            isa = XCSwiftPackageProductDependency;
-            package = 89CA072B2EDE5F0A0063F970 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-            productName = FirebaseFirestore;
-        };
-        89CA07322EDE5F0A0063F970 /* FirebaseStorage */ = {
-            isa = XCSwiftPackageProductDependency;
-            package = 89CA072B2EDE5F0A0063F970 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-            productName = FirebaseStorage;
-        };
+		89CA072C2EDE5F0A0063F970 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 89CA072B2EDE5F0A0063F970 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		89CA072E2EDE5F0A0063F970 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 89CA072B2EDE5F0A0063F970 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		89CA07302EDE5F0A0063F970 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 89CA072B2EDE5F0A0063F970 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		89CA07322EDE5F0A0063F970 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 89CA072B2EDE5F0A0063F970 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
 /* End XCSwiftPackageProductDependency section */
-    };
-    rootObject = 89351FB62EB29AB7007CCC0E /* Project object */;
+	};
+	rootObject = 89351FB62EB29AB7007CCC0E /* Project object */;
 }
-
