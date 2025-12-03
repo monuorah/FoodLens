@@ -22,3 +22,4 @@ DerivedData/
 
 //# Ignore Xcode Previews cache
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+FoodLens.xcodeproj/project.xcworkspace/xcshareddata/
