@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FirebaseAuth
 
 struct WeightEntry: Codable, Identifiable {
     let id: UUID
@@ -23,19 +24,25 @@ struct WeightEntry: Codable, Identifiable {
 
 class WeightStorage {
     static let shared = WeightStorage()
-    private let key = "savedWeights"
+
+    private var userKey: String {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            return "savedWeights_guest" // Fallback for signed-out state
+        }
+        return "savedWeights_\(userId)"
+    }
 
     func saveWeight(_ entry: WeightEntry) {
         var weights = loadWeights()
         weights.append(entry)
 
         if let data = try? JSONEncoder().encode(weights) {
-            UserDefaults.standard.set(data, forKey: key)
+            UserDefaults.standard.set(data, forKey: userKey)
         }
     }
 
     func loadWeights() -> [WeightEntry] {
-        guard let data = UserDefaults.standard.data(forKey: key),
+        guard let data = UserDefaults.standard.data(forKey: userKey),
               let weights = try? JSONDecoder().decode([WeightEntry].self, from: data) else {
             return []
         }

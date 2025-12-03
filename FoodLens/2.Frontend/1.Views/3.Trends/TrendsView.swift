@@ -214,36 +214,6 @@ struct TrendsView: View {
 
                     ScrollView {
                         VStack(spacing: 16) {
-                            // Day header
-                            VStack(spacing: 8) {
-                                HStack {
-                                    Image(systemName: "chevron.left")
-                                        .foregroundStyle(.secondary)
-                                    
-                                    Spacer()
-
-                                    Text("Today \(Int(totalCalories)) cal")
-                                        .font(.system(.headline, design: .rounded))
-                                        .foregroundStyle(.secondary)
-
-                                    Spacer()
-                                }
-
-                                // Progress bar
-                                GeometryReader { geo in
-                                    ZStack(alignment: .leading) {
-                                        Capsule()
-                                            .fill(Color.secondary.opacity(0.2))
-                                            .frame(height: 8)
-                                        Capsule()
-                                            .fill(Color.fgreen)
-                                            .frame(width: geo.size.width * calorieProgress, height: 8)
-                                    }
-                                }
-                                .frame(height: 8)
-                            }
-                            .padding(.top, 30)
-                            
                             // Calories card (daily shows "Calories", non-daily shows "Average Calories")
                             RoundedCard {
                                 HStack(alignment: .firstTextBaseline) {
@@ -268,6 +238,22 @@ struct TrendsView: View {
                                             .foregroundStyle(.secondary)
                                             .font(.system(.subheadline, design: .rounded))
                                     }
+                                }
+
+                                // Progress bar (only for daily view)
+                                if selectedRange == .daily {
+                                    GeometryReader { geo in
+                                        ZStack(alignment: .leading) {
+                                            Capsule()
+                                                .fill(Color.secondary.opacity(0.2))
+                                                .frame(height: 8)
+                                            Capsule()
+                                                .fill(Color.fgreen)
+                                                .frame(width: geo.size.width * calorieProgress, height: 8)
+                                        }
+                                    }
+                                    .frame(height: 8)
+                                    .padding(.top, 10)
                                 }
 
                                 if selectedRange != .daily {
@@ -466,6 +452,7 @@ private struct MacroRow: View {
                 Text("Goal")
                     .foregroundStyle(.secondary)
                     .font(.system(.caption, design: .rounded))
+                    .frame(width: 50, alignment: .leading)
                 ProgressBar(value: goalPercent, tint: tint.opacity(0.6))
                 Text("\(goalPercent)%")
                     .foregroundStyle(.secondary)
@@ -477,6 +464,7 @@ private struct MacroRow: View {
                 Text("Actual")
                     .foregroundStyle(.secondary)
                     .font(.system(.caption, design: .rounded))
+                    .frame(width: 50, alignment: .leading)
                 ProgressBar(value: actualPercent, tint: tint)
                 Text("\(actualPercent)%")
                     .foregroundStyle(.secondary)
