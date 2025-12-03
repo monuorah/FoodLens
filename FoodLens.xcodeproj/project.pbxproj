@@ -15,7 +15,7 @@
 		89CA0AF02EDEE95F0063F970 /* FoodLensApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89CA0AEF2EDEE95F0063F970 /* FoodLensApp.swift */; };
 		89CA0AF42EDF6CAF0063F970 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 89CA0AF32EDF6CAF0063F970 /* GoogleService-Info.plist */; };
 		89CA0DDD2EDF90E20063F970 /* .gitignore in Sources */ = {isa = PBXBuildFile; fileRef = 89CA0DDB2EDF90DE0063F970 /* .gitignore */; };
-		89CA13432EDFEFBF0063F970 /* RootRouterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89CA13422EDFEFBF0063F970 /* RootRouterView.swift */; };
+		89FB5C852EE005B700361C50 /* RootRouterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89FB5C842EE005B600361C50 /* RootRouterView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,8 +24,8 @@
 		89CA0AF32EDF6CAF0063F970 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		89CA0AF72EDF753A0063F970 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		89CA0DDB2EDF90DE0063F970 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
-		89CA12E62EDFA36A0063F970 /* FoodLens.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FoodLens.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		89CA13422EDFEFBF0063F970 /* RootRouterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootRouterView.swift; sourceTree = "<group>"; };
+		89FB5C842EE005B600361C50 /* RootRouterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootRouterView.swift; sourceTree = "<group>"; };
+		BAB580C32EDF8FA8007F6715 /* FoodLens.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FoodLens.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -56,12 +56,12 @@
 			children = (
 				89351FC02EB29AB7007CCC0E /* FoodLens */,
 				89CA0AEF2EDEE95F0063F970 /* FoodLensApp.swift */,
-				89CA13422EDFEFBF0063F970 /* RootRouterView.swift */,
+				89FB5C842EE005B600361C50 /* RootRouterView.swift */,
 				89CA0AED2EDEE8760063F970 /* Assets.xcassets */,
 				89CA0AF72EDF753A0063F970 /* Info.plist */,
 				89CA0AF32EDF6CAF0063F970 /* GoogleService-Info.plist */,
 				89CA0DDB2EDF90DE0063F970 /* .gitignore */,
-				89CA12E62EDFA36A0063F970 /* FoodLens.app */,
+				BAB580C32EDF8FA8007F6715 /* FoodLens.app */,
 			);
 			sourceTree = "<group>";
 		};
@@ -91,7 +91,7 @@
 				89CA07322EDE5F0A0063F970 /* FirebaseStorage */,
 			);
 			productName = FoodLens;
-			productReference = 89CA12E62EDFA36A0063F970 /* FoodLens.app */;
+			productReference = BAB580C32EDF8FA8007F6715 /* FoodLens.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -102,7 +102,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2600;
-				LastUpgradeCheck = 2600;
+				LastUpgradeCheck = 2610;
 				TargetAttributes = {
 					89351FBD2EB29AB7007CCC0E = {
 						CreatedOnToolsVersion = 26.0.1;
@@ -149,7 +149,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				89CA0DDD2EDF90E20063F970 /* .gitignore in Sources */,
-				89CA13432EDFEFBF0063F970 /* RootRouterView.swift in Sources */,
+				89FB5C852EE005B700361C50 /* RootRouterView.swift in Sources */,
 				89CA0AF02EDEE95F0063F970 /* FoodLensApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -216,6 +216,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -273,6 +274,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
