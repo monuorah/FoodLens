@@ -8,8 +8,33 @@
 import SwiftUI
 
 struct FoodView: View {
-    var title: String = "Egg"
+    let foodItem: FoodItem
     @Environment(\.dismiss) private var dismiss
+    
+    @State private var selectedMealType = "Breakfast"
+    @State private var servings: Double = 1.0
+
+    var totalCalories: Double { foodItem.calories * servings }
+    var totalProtein: Double { foodItem.protein * servings }
+    var totalCarbs: Double { foodItem.carbs * servings }
+    var totalFat: Double { foodItem.fat * servings }
+    
+    var totalMacros: Double { totalProtein + totalCarbs + totalFat }
+    
+    var proteinPercent: Int {
+        guard totalMacros > 0 else { return 0 }
+        return Int((totalProtein / totalMacros) * 100)
+    }
+    
+    var carbsPercent: Int {
+        guard totalMacros > 0 else { return 0 }
+        return Int((totalCarbs / totalMacros) * 100)
+    }
+    
+    var fatPercent: Int {
+        guard totalMacros > 0 else { return 0 }
+        return Int((totalFat / totalMacros) * 100)
+    }
 
     var body: some View {
         ZStack {
@@ -17,12 +42,10 @@ struct FoodView: View {
 
             VStack(alignment: .leading, spacing: 15) {
                 // Title
-                Text(title)
+                Text(foodItem.name)
                     .foregroundStyle(.fblack)
-                    .font(.system(.largeTitle, design: .rounded))
+                    .font(.system(.title2, design: .rounded))
                     .fontWeight(.black)
-                
-                Spacer()
                 
                 // Meal Type
                 Text("Meal Type")
@@ -30,70 +53,95 @@ struct FoodView: View {
                     .font(.system(.title3, design: .rounded))
                     .fontWeight(.semibold)
 
-                PillField(label: "Breakfast", fullWidth: true)
-
-                // Serving Size + Number of Servings
-
-                HStack(spacing: 20) {
-                    VStack(alignment: .leading, spacing: 15) {
-                        Text("Serving Size")
-                            .foregroundStyle(.fblack)
-                            .font(.system(.title3, design: .rounded))
-                            .fontWeight(.semibold)
-                        PillField(label: "1 gram", fullWidth: false)
+                Menu {
+                    Button("Breakfast") { selectedMealType = "Breakfast" }
+                    Button("Lunch") { selectedMealType = "Lunch" }
+                    Button("Dinner") { selectedMealType = "Dinner" }
+                    Button("Snacks") { selectedMealType = "Snacks" }
+                } label: {
+                    HStack {
+                        Text(selectedMealType)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Image(systemName: "chevron.up.chevron.down")
+                            .foregroundStyle(.secondary)
                     }
+                    .padding()
+                    .background(Color.secondary.opacity(0.15))
+                    .cornerRadius(18)
+                }
+
+                // Servings
+                VStack(alignment: .leading, spacing: 15) {
+                    Text("Number of Servings (\(foodItem.servingSize) each)")
+                        .foregroundStyle(.fblack)
+                        .font(.system(.title3, design: .rounded))
+                        .fontWeight(.semibold)
                     
-                    VStack(alignment: .leading, spacing: 15) {
-                        Text("# of Servings")
-                            .foregroundStyle(.fblack)
-                            .font(.system(.title3, design: .rounded))
-                            .fontWeight(.semibold)
-                        PillField(label: "1", fullWidth: false)
+                    HStack {
+                        Button {
+                            if servings > 0.5 { servings -= 0.5 }
+                        } label: {
+                            Image(systemName: "minus.circle.fill")
+                                .font(.title2)
+                                .foregroundStyle(.forange)
+                        }
+                        
+                        Text(String(format: "%.1f", servings))
+                            .frame(width: 60)
+                            .padding(8)
+                            .background(Color.secondary.opacity(0.15))
+                            .cornerRadius(10)
+                        
+                        Button {
+                            servings += 0.5
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title2)
+                                .foregroundStyle(.forange)
+                        }
                     }
                 }
                 
-                // Calories Ring
-                VStack(spacing: 18) {
-                    CaloriesRingView(
-                        mainValueText: "286 cal",
-                        mainArc: .forange,
-                        smallArc1: .fblack,
-                        smallArc2: .fgreen
-                    )
-                    .frame(width: 180, height: 180)
-                    .frame(maxWidth: .infinity)
+                // Calories
+                VStack(spacing: 10) {
+                    Text("\(Int(totalCalories)) cal")
+                        .foregroundStyle(.fblack)
+                        .font(.system(.title, design: .rounded))
+                        .fontWeight(.bold)
                 }
-                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
 
-                // Macros row
+                // Macros
                 HStack(alignment: .top) {
                     MacroColumn(
-                        percentText: "3 %",
-                        gramsText: "1.9 g",
+                        percentText: "\(carbsPercent)%",
+                        gramsText: String(format: "%.1f g", totalCarbs),
                         label: "Carbs",
                         color: .fgreen
                     )
                     Spacer()
                     MacroColumn(
-                        percentText: "63 %",
-                        gramsText: "19.9 g",
+                        percentText: "\(fatPercent)%",
+                        gramsText: String(format: "%.1f g", totalFat),
                         label: "Fat",
                         color: .forange
                     )
                     Spacer()
                     MacroColumn(
-                        percentText: "35 %",
-                        gramsText: "24.8 g",
+                        percentText: "\(proteinPercent)%",
+                        gramsText: String(format: "%.1f g", totalProtein),
                         label: "Protein",
                         color: .fblack
                     )
                 }
-                .padding(.horizontal, 6)
 
                 Spacer()
 
                 // Save button
                 Button {
+                    saveMeal()
                     dismiss()
                 } label: {
                     Text("Save")
@@ -102,42 +150,21 @@ struct FoodView: View {
                         .background(Color.fgreen)
                         .cornerRadius(14)
                         .foregroundStyle(.fwhite)
-                        .font(.system(.headline, design: .rounded))
                         .fontWeight(.semibold)
                 }
-                .padding(.top, 8)
             }
             .padding()
-
         }
     }
-}
-
-private struct PillField: View {
-    let label: String
-    let fullWidth: Bool
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 18)
-                .fill(Color.secondary.opacity(0.15))
-            HStack {
-                Text(label)
-                    .foregroundStyle(.secondary)
-                    .font(.system(.title3, design: .rounded))
-                Spacer()
-                Image(systemName: "chevron.up.chevron.down")
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-        }
-        .frame(height: 56)
-        .overlay(
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+    
+    private func saveMeal() {
+        let meal = LoggedMeal(
+            foodItem: foodItem,
+            mealType: selectedMealType,
+            servings: servings,
+            date: Date()
         )
-        .frame(maxWidth: fullWidth ? .infinity : 180, alignment: .leading)
+        MealStorage.shared.saveMeal(meal)
     }
 }
 
@@ -164,50 +191,14 @@ private struct MacroColumn: View {
     }
 }
 
-// STATIC AS OF RIGHT NOW
-private struct CaloriesRingView: View {
-    let mainValueText: String
-    let mainArc: Color
-    let smallArc1: Color
-    let smallArc2: Color
-
-    // Static arc proportions
-    private let mainPortion: CGFloat = 0.78
-    private let small1: CGFloat = 0.10
-    private let small2: CGFloat = 0.06
-
-    var body: some View {
-        ZStack {
-            // Background ring
-            Circle()
-                .stroke(Color.secondary.opacity(0.15), lineWidth: 14)
-
-            // Main arc (orange)
-            Circle()
-                .trim(from: 0, to: mainPortion)
-                .stroke(mainArc, style: StrokeStyle(lineWidth: 14, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-
-            // Small arc 1 (purple)
-            Circle()
-                .trim(from: mainPortion + 0.02, to: min(mainPortion + 0.02 + small1, 1.0))
-                .stroke(smallArc1, style: StrokeStyle(lineWidth: 14, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-
-            // Small arc 2 (green)
-            Circle()
-                .trim(from: mainPortion + 0.02 + small1 + 0.02, to: min(mainPortion + 0.02 + small1 + 0.02 + small2, 1.0))
-                .stroke(smallArc2, style: StrokeStyle(lineWidth: 14, lineCap: .round))
-                .rotationEffect(.degrees(-90)) // Rotates the arc so the path’s 0 position is at 12 o’clock (top) instead of the default 3 o’clock (right), which is typical for ring charts.
-
-            Text(mainValueText)
-                .foregroundStyle(.fblack)
-                .font(.system(.title3, design: .rounded))
-        }
-        .padding(8)
-    }
-}
-
 #Preview {
-    FoodView()
+    FoodView(foodItem: FoodItem(
+        id: 1,
+        name: "Chicken Breast",
+        calories: 165,
+        protein: 31,
+        carbs: 0,
+        fat: 3.6,
+        servingSize: "100g"
+    ))
 }

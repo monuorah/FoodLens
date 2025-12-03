@@ -9,6 +9,9 @@ import SwiftUI
 
 struct SearchView: View {
     @State private var query: String = ""
+    @State private var searchResults: [FoodItem] = []
+    @State private var isLoading = false
+    @State private var errorMessage: String?
     
     var body: some View {
         NavigationStack {
@@ -16,55 +19,69 @@ struct SearchView: View {
                 Color.fwhite.ignoresSafeArea()
                 VStack(spacing: 16) {
                     // Search
-                    TextField("Search foods...", text: $query)
-                        .overlay(
-                            HStack {
-                                Spacer()
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 20, height: 20)
-                                    .padding(.trailing, 10)
+                    HStack {
+                        TextField("Search foods...", text: $query)
+                            .padding(10)
+                            .onSubmit {
+                                Task {
+                                    await performSearch()
+                                }
                             }
-                        )
-                        .padding()
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(.secondary.opacity(0.2), lineWidth: 1)
-                        )
+                        
+                        if isLoading {
+                            ProgressView()
+                                .padding(.trailing, 10)
+                        } else {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundStyle(.secondary)
+                                .padding(.trailing, 10)
+                        }
+                    }
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(.secondary.opacity(0.2), lineWidth: 1)
+                    )
                     
-                    // Conditional content
-                    if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        // Carrot icon when empty
+                    // Error message
+                    if let error = errorMessage {
+                        Text(error)
+                            .foregroundStyle(.fred)
+                            .font(.caption)
+                    }
+                    
+                    // Results
+                    if searchResults.isEmpty && !query.isEmpty && !isLoading {
+                        VStack {
+                            Spacer()
+                            Text("No results found")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                    } else if searchResults.isEmpty {
                         VStack {
                             Spacer()
                             Image(systemName: "carrot")
                                 .font(.system(size: 90, weight: .regular))
                                 .foregroundStyle(.fgray)
-                                .accessibilityLabel("Carrot")
                             Spacer()
                         }
                     } else {
-                        // Navigable list to two FoodViews with a chevron
-                        List {
+                        List(searchResults) { food in
                             NavigationLink {
-                                FoodView(title: "Result 1")
+                                FoodView(foodItem: food)
                             } label: {
-                                Text("Result 1")
-                                    .foregroundStyle(.fblack)
-                                    .font(.system(.body, design: .rounded))
-                            }
-                            
-                            NavigationLink {
-                                FoodView(title: "Result 2")
-                            } label: {
-                                Text("Result 2")
-                                    .foregroundStyle(.fblack)
-                                    .font(.system(.body, design: .rounded))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(food.name)
+                                        .foregroundStyle(.fblack)
+                                        .font(.system(.body, design: .rounded))
+                                    Text("\(Int(food.calories)) cal · \(food.servingSize)")
+                                        .foregroundStyle(.secondary)
+                                        .font(.system(.caption, design: .rounded))
+                                }
                             }
                         }
                         .listStyle(.insetGrouped)
                         .scrollContentBackground(.hidden)
-                        .background(Color.clear)
                     }
                     
                     Spacer()
@@ -73,6 +90,25 @@ struct SearchView: View {
                 .navigationTitle("Search")
             }
         }
+    }
+    
+    private func performSearch() async {
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            searchResults = []
+            return
+        }
+        
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            searchResults = try await USDAFoodService.shared.searchFoods(query: query)
+        } catch {
+            errorMessage = "Search failed. Try again."
+            searchResults = []
+        }
+        
+        isLoading = false
     }
 }
 
