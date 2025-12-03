@@ -62,45 +62,28 @@ class USDAFoodService {
     }
 }
 
-struct FoodItem: Identifiable, Codable {
-    let id: Int
-    let name: String
-    let calories: Double
-    let protein: Double
-    let carbs: Double
-    let fat: Double
-    let servingSize: String
-    
-    // Memberwise initializer for manual creation (e.g., in previews)
-    init(id: Int, name: String, calories: Double, protein: Double, carbs: Double, fat: Double, servingSize: String) {
-        self.id = id
-        self.name = name
-        self.calories = calories
-        self.protein = protein
-        self.carbs = carbs
-        self.fat = fat
-        self.servingSize = servingSize
-    }
-    
+// MARK: - FoodItem Extension for USDA
+
+extension FoodItem {
     init(from usdaFood: USDAFood) {
         self.id = usdaFood.fdcId
         self.name = usdaFood.description
-        
+
         var cals = 0.0
         var prot = 0.0
         var carb = 0.0
         var fat = 0.0
-        
+
         for nutrient in usdaFood.foodNutrients {
             switch nutrient.nutrientId {
             case 1008: cals = nutrient.value
             case 1003: prot = nutrient.value
             case 1005: carb = nutrient.value
-            case 1004: fat = nutrient.value   
+            case 1004: fat = nutrient.value
             default: break
             }
         }
-        
+
         self.calories = cals
         self.protein = prot
         self.carbs = carb

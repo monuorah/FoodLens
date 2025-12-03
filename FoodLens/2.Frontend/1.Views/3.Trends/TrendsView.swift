@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Charts
 
 struct TrendsView: View {
     enum Range: String, CaseIterable, Identifiable {
@@ -16,6 +17,59 @@ struct TrendsView: View {
     }
 
     @State private var selectedRange: Range = .daily
+    @State private var todaysMeals: [LoggedMeal] = []
+    @State private var calorieGoal: Double = 2200
+    @State private var weightEntries: [WeightEntry] = []
+    @State private var weightGoal: Double = 150 // lbs
+
+    // Computed properties for daily stats
+    private var totalCalories: Double {
+        todaysMeals.reduce(0) { $0 + $1.totalCalories }
+    }
+
+    private var totalCarbs: Double {
+        todaysMeals.reduce(0) { $0 + $1.totalCarbs }
+    }
+
+    private var totalFat: Double {
+        todaysMeals.reduce(0) { $0 + $1.totalFat }
+    }
+
+    private var totalProtein: Double {
+        todaysMeals.reduce(0) { $0 + $1.totalProtein }
+    }
+
+    private var totalMacros: Double {
+        totalCarbs + totalFat + totalProtein
+    }
+
+    private var carbsPercent: Int {
+        guard totalMacros > 0 else { return 0 }
+        return Int((totalCarbs / totalMacros) * 100)
+    }
+
+    private var fatPercent: Int {
+        guard totalMacros > 0 else { return 0 }
+        return Int((totalFat / totalMacros) * 100)
+    }
+
+    private var proteinPercent: Int {
+        guard totalMacros > 0 else { return 0 }
+        return Int((totalProtein / totalMacros) * 100)
+    }
+
+    private var calorieProgress: Double {
+        guard calorieGoal > 0 else { return 0 }
+        return min(totalCalories / calorieGoal, 1.0)
+    }
+
+    private var currentWeight: Double {
+        return WeightStorage.shared.mostRecentWeight()?.weight ?? 170
+    }
+
+    private var currentWeightUnit: String {
+        return WeightStorage.shared.mostRecentWeight()?.unit ?? "lbs"
+    }
 
     var body: some View {
         NavigationStack {
@@ -46,23 +100,26 @@ struct TrendsView: View {
                                         .foregroundStyle(.secondary)
                                     
                                     Spacer()
-                                    
-                                    Text("Today 400 cal")
+
+                                    Text("Today \(Int(totalCalories)) cal")
                                         .font(.system(.headline, design: .rounded))
                                         .foregroundStyle(.secondary)
-                                    
+
                                     Spacer()
                                 }
-                                
-                                // Progress bar (static visuals)
-                                ZStack(alignment: .leading) {
-                                    Capsule()
-                                        .fill(Color.secondary.opacity(0.2))
-                                        .frame(height: 8)
-                                    Capsule()
-                                        .fill(Color.fgreen)
-                                        .frame(width: 120, height: 8) // static width
+
+                                // Progress bar
+                                GeometryReader { geo in
+                                    ZStack(alignment: .leading) {
+                                        Capsule()
+                                            .fill(Color.secondary.opacity(0.2))
+                                            .frame(height: 8)
+                                        Capsule()
+                                            .fill(Color.fgreen)
+                                            .frame(width: geo.size.width * calorieProgress, height: 8)
+                                    }
                                 }
+                                .frame(height: 8)
                             }
                             .padding(.top, 30)
                             
@@ -74,7 +131,7 @@ struct TrendsView: View {
                                             .foregroundStyle(.fblack)
                                             .font(.system(.headline, design: .rounded))
 
-                                        Text("Goal: 2200 cal")
+                                        Text("Goal: \(Int(calorieGoal)) cal")
                                             .foregroundStyle(.secondary)
                                             .font(.system(.subheadline, design: .rounded))
                                     }
@@ -82,7 +139,7 @@ struct TrendsView: View {
                                     Spacer()
 
                                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                        Text(selectedRange == .daily ? "2134" : "2400")
+                                        Text(selectedRange == .daily ? "\(Int(totalCalories))" : "2400")
                                             .foregroundStyle(.fgreen)
                                             .font(.system(.title2, design: .rounded))
                                             .fontWeight(.bold)
@@ -110,7 +167,7 @@ struct TrendsView: View {
                                     MacroRow(
                                         name: "Carbs",
                                         goalPercent: 30,
-                                        actualPercent: selectedRange == .daily ? 40 : 45,
+                                        actualPercent: selectedRange == .daily ? carbsPercent : 45,
                                         tint: .fgreen
                                     )
 
@@ -118,7 +175,7 @@ struct TrendsView: View {
                                     MacroRow(
                                         name: "Fat",
                                         goalPercent: 25,
-                                        actualPercent: selectedRange == .daily ? 35 : 25,
+                                        actualPercent: selectedRange == .daily ? fatPercent : 25,
                                         tint: .fred
                                     )
 
@@ -126,7 +183,7 @@ struct TrendsView: View {
                                     MacroRow(
                                         name: "Protein",
                                         goalPercent: 45,
-                                        actualPercent: 30,
+                                        actualPercent: selectedRange == .daily ? proteinPercent : 30,
                                         tint: .forange
                                     )
                                 }
@@ -140,7 +197,7 @@ struct TrendsView: View {
                                             .foregroundStyle(.fblack)
                                             .font(.system(.headline, design: .rounded))
 
-                                        Text("Goal: 150 lbs")
+                                        Text("Goal: \(Int(weightGoal)) lbs")
                                             .foregroundStyle(.secondary)
                                             .font(.system(.subheadline, design: .rounded))
                                     }
@@ -148,19 +205,24 @@ struct TrendsView: View {
                                     Spacer()
 
                                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                        Text("170")
+                                        Text("\(Int(currentWeight))")
                                             .foregroundStyle(.fgreen)
                                             .font(.system(.title2, design: .rounded))
                                             .fontWeight(.bold)
-                                        Text("lbs")
+                                        Text(currentWeightUnit)
                                             .foregroundStyle(.secondary)
                                             .font(.system(.subheadline, design: .rounded))
                                     }
                                 }
 
-                                // Graph placeholder
-                                GraphPlaceholder()
-                                    .padding(.top, 10)
+                                // Weight graph
+                                if weightEntries.isEmpty {
+                                    GraphPlaceholder()
+                                        .padding(.top, 10)
+                                } else {
+                                    WeightChart(entries: weightEntries)
+                                        .padding(.top, 10)
+                                }
                             }
 
                             // Top 5 foods
@@ -221,7 +283,15 @@ struct TrendsView: View {
                 }
                 .padding(35)
             }
+            .onAppear {
+                loadMeals()
+            }
         }
+    }
+
+    private func loadMeals() {
+        todaysMeals = MealStorage.shared.mealsForToday()
+        weightEntries = WeightStorage.shared.weightsForLastDays(30)
     }
 }
 
@@ -290,20 +360,14 @@ private struct ProgressBar: View {
     let tint: Color
 
     var body: some View {
-        ZStack(alignment: .leading) {
-            Capsule()
-                .fill(Color.secondary.opacity(0.15))
-            Capsule()
-                .fill(tint)
-                .frame(width: nil)
-                .overlay(
-                    GeometryReader { geo in
-                        Capsule()
-                            .fill(tint)
-                            .frame(width: geo.size.width * CGFloat(min(max(value, 0), 100)) / 100.0) // should be the line that computes the width of the filled portion based on the current value 0..100
-                    }
-                )
-                .opacity(0)
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.secondary.opacity(0.15))
+                Capsule()
+                    .fill(tint)
+                    .frame(width: geo.size.width * CGFloat(min(max(value, 0), 100)) / 100.0)
+            }
         }
         .frame(height: 8)
         .frame(maxWidth: .infinity)
@@ -386,6 +450,46 @@ private struct InsightCard: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
         )
+    }
+}
+
+private struct WeightChart: View {
+    let entries: [WeightEntry]
+
+    var body: some View {
+        Chart {
+            ForEach(entries) { entry in
+                LineMark(
+                    x: .value("Date", entry.date),
+                    y: .value("Weight", entry.weight)
+                )
+                .foregroundStyle(Color.fgreen)
+                .interpolationMethod(.catmullRom)
+
+                AreaMark(
+                    x: .value("Date", entry.date),
+                    y: .value("Weight", entry.weight)
+                )
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.fgreen.opacity(0.3), Color.fgreen.opacity(0.05)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .interpolationMethod(.catmullRom)
+            }
+        }
+        .chartXAxis {
+            AxisMarks(values: .automatic(desiredCount: 5)) { value in
+                AxisGridLine()
+                AxisValueLabel(format: .dateTime.month().day())
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading)
+        }
+        .frame(height: 120)
     }
 }
 
