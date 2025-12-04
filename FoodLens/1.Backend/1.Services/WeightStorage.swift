@@ -53,6 +53,10 @@ class WeightStorage {
         return loadWeights().last
     }
 
+    func oldestWeight() -> WeightEntry? {
+        return loadWeights().first
+    }
+
     func weightsForLastDays(_ days: Int) -> [WeightEntry] {
         let calendar = Calendar.current
         let now = Date()
