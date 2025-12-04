@@ -4,17 +4,35 @@ import FirebaseAuth
 
 struct RootRouterView: View {
     @EnvironmentObject var authVM: AuthViewModel
+    @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
         Group {
             if let user = authVM.user {
                 SessionRootView(uid: user.uid)
+            } else if authVM.isCompletingPendingEmailChange, let uid = authVM.lastKnownUID {
+                // Stay in the session UI while finishing verification
+                SessionRootView(uid: uid)
             } else {
                 LaunchView()
             }
         }
-        // Rebuild the tree when the uid changes to ensure a fresh session view hierarchy
-        .id(authVM.user?.uid ?? "loggedOut")
+        // Keep a stable identity while finishing verification to avoid a visual bounce
+        .id(authVM.user?.uid ?? authVM.lastKnownUID ?? "loggedOut")
+        // When app becomes active, check if a pending email change was verified
+        .onChange(of: scenePhase) { newPhase in
+            if newPhase == .active {
+                Task { await authVM.completePendingEmailChangeIfVerified() }
+            }
+        }
+        // Also check on cold launch (first render)
+        .task {
+            await authVM.completePendingEmailChangeIfVerified()
+        }
+        // If you later enable in-app action code handling / dynamic links, this will refresh immediately
+        .onOpenURL { _ in
+            Task { await authVM.completePendingEmailChangeIfVerified() }
+        }
     }
 }
 
@@ -65,3 +83,4 @@ private struct SessionRootView: View {
         }
     }
 }
+

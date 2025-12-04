@@ -12,6 +12,11 @@ struct HomeView: View {
     @EnvironmentObject var authVM: AuthViewModel
     
     @State private var showLoggingSheet = false
+
+    // Navigation/presentation state for full-size pages (all pushed so they get a back button)
+    @State private var pushToSearch = false
+    @State private var pushToScanFood = false
+    @State private var pushToScanBarcode = false
     
     private var greetingName: String {
         if !model.name.isEmpty {
@@ -99,14 +104,46 @@ struct HomeView: View {
                             .cornerRadius(10)
                     }
                     .sheet(isPresented: $showLoggingSheet) {
-                        LoggingSheetView()
-                            .ignoresSafeArea()
-                            .presentationDetents([.fraction(0.4), .medium])
+                        LoggingSheetView { action in
+                            // Dismiss the sheet first, then navigate
+                            showLoggingSheet = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                switch action {
+                                case .search:
+                                    pushToSearch = true
+                                case .scanFood:
+                                    pushToScanFood = true
+                                case .scanBarcode:
+                                    pushToScanBarcode = true
+                                case .changeWeight:
+                                    // handled inside the sheet
+                                    break
+                                }
+                            }
+                        }
+                        .ignoresSafeArea()
+                        .presentationDetents([.fraction(0.4), .medium])
                     }
                     
                 } // VStack
                 .padding(35)
             } // ZStack
+            // Navigation destinations (all push so they get a back chevron)
+            .navigationDestination(isPresented: $pushToSearch) {
+                SearchView()
+                    .navigationTitle("Search Food")
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+            .navigationDestination(isPresented: $pushToScanFood) {
+                ScanFoodView()
+                    .navigationTitle("Scan Food")
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+            .navigationDestination(isPresented: $pushToScanBarcode) {
+                ScanBarcodeView()
+                    .navigationTitle("Scan Barcode")
+                    .navigationBarTitleDisplayMode(.inline)
+            }
         } // NavigationStack
     }
 }
