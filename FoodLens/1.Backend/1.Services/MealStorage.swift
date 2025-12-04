@@ -14,7 +14,17 @@ struct LoggedMeal: Codable, Identifiable {
     let mealType: String
     let servings: Double
     let date: Date
-    
+
+    // Preserving-id initializer (useful for edits)
+    init(id: UUID, foodItem: FoodItem, mealType: String, servings: Double, date: Date) {
+        self.id = id
+        self.foodItem = foodItem
+        self.mealType = mealType
+        self.servings = servings
+        self.date = date
+    }
+
+    // New entries generate a fresh id
     init(foodItem: FoodItem, mealType: String, servings: Double, date: Date) {
         self.id = UUID()
         self.foodItem = foodItem
@@ -24,9 +34,18 @@ struct LoggedMeal: Codable, Identifiable {
     }
     
     var totalCalories: Double { foodItem.calories * servings }
-    var totalProtein: Double { foodItem.protein * servings }
-    var totalCarbs: Double { foodItem.carbs * servings }
-    var totalFat: Double { foodItem.fat * servings }
+    var totalProtein: Double  { foodItem.protein  * servings }
+    var totalCarbs: Double    { foodItem.carbs    * servings }
+    var totalFat: Double      { foodItem.fat      * servings }
+}
+
+// Make it comparable/hashable by id only (no need for FoodItem to be Hashable)
+extension LoggedMeal: Equatable {
+    static func == (lhs: LoggedMeal, rhs: LoggedMeal) -> Bool { lhs.id == rhs.id }
+}
+
+extension LoggedMeal: Hashable {
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }
 
 class MealStorage {
@@ -42,9 +61,20 @@ class MealStorage {
     func saveMeal(_ meal: LoggedMeal) {
         var meals = loadMeals()
         meals.append(meal)
+        persist(meals)
+    }
 
-        if let data = try? JSONEncoder().encode(meals) {
-            UserDefaults.standard.set(data, forKey: userKey)
+    func deleteMeal(id: UUID) {
+        var meals = loadMeals()
+        meals.removeAll { $0.id == id }
+        persist(meals)
+    }
+
+    func updateMeal(_ updated: LoggedMeal) {
+        var meals = loadMeals()
+        if let idx = meals.firstIndex(where: { $0.id == updated.id }) {
+            meals[idx] = updated
+            persist(meals)
         }
     }
 
@@ -58,13 +88,19 @@ class MealStorage {
     
     func mealsForToday() -> [LoggedMeal] {
         let calendar = Calendar.current
-        return loadMeals().filter { meal in
-            calendar.isDateInToday(meal.date)
-        }
+        return loadMeals().filter { calendar.isDateInToday($0.date) }
     }
     
     func mealsByType() -> [String: [LoggedMeal]] {
         let today = mealsForToday()
         return Dictionary(grouping: today, by: { $0.mealType })
+    }
+
+    // MARK: - Helpers
+
+    private func persist(_ meals: [LoggedMeal]) {
+        if let data = try? JSONEncoder().encode(meals) {
+            UserDefaults.standard.set(data, forKey: userKey)
+        }
     }
 }

@@ -13,10 +13,16 @@ struct HomeView: View {
     
     @State private var showLoggingSheet = false
 
-    // Navigation/presentation state for full-size pages (all pushed so they get a back button)
+    // Navigation state (all pushed so they get a back button)
     @State private var pushToSearch = false
     @State private var pushToScanFood = false
     @State private var pushToScanBarcode = false
+
+    // Edit navigation
+    @State private var editingMeal: LoggedMeal?
+
+    // Data for today
+    @State private var todaysMeals: [LoggedMeal] = []
     
     private var greetingName: String {
         if !model.name.isEmpty {
@@ -38,57 +44,53 @@ struct HomeView: View {
                     TitleComponent(title: "Hi, \(greetingName) 👋")
                     
                     Text("Today at a glance")
+                        .padding(.bottom)
                         .foregroundStyle(.fblack)
                         .font(.system(.title2, design: .rounded))
                         .fontWeight(.black)
                     
                     ScrollView {
-                        // Today food tracked
-                        VStack(spacing: 24) {
-                            // Breakfast
-                            MealCardTile(
+                        VStack(spacing: 18) {
+                            MealSectionCard(
                                 title: "Breakfast",
                                 tint: .yellow,
-                                items: [
-                                    MealItem(left: "egg", right: "2 servings", isPlaceholder: false, foodItem: nil)
-                                ]
+                                items: itemsForMeal("Breakfast"),
+                                onDelete: handleDelete,
+                                onEdit: handleEdit,
+                                onTapAdd: { showLoggingSheet = true }
                             )
-                            .padding(.horizontal, 6)
                             
-                            // Lunch
-                            MealCardTile(
+                            MealSectionCard(
                                 title: "Lunch",
                                 tint: .blue,
-                                items: [
-                                    MealItem(left: "egg", right: "2 servings", isPlaceholder: false, foodItem: nil),
-                                    MealItem(left: "toast", right: "2 servings", isPlaceholder: false, foodItem: nil)
-                                ]
+                                items: itemsForMeal("Lunch"),
+                                onDelete: handleDelete,
+                                onEdit: handleEdit,
+                                onTapAdd: { showLoggingSheet = true }
                             )
-                            .padding(.horizontal, 6)
                             
-                            // Dinner
-                            MealCardTile(
+                            MealSectionCard(
                                 title: "Dinner",
                                 tint: .brown,
-                                items: [
-                                    MealItem(left: "empty..", right: nil, isPlaceholder: true, foodItem: nil)
-                                ]
+                                items: itemsForMeal("Dinner"),
+                                onDelete: handleDelete,
+                                onEdit: handleEdit,
+                                onTapAdd: { showLoggingSheet = true }
                             )
-                            .padding(.horizontal, 6)
                             
-                            // Snacks (gray like screenshot)
-                            MealCardTile(
+                            MealSectionCard(
                                 title: "Snacks",
                                 tint: .fred,
-                                items: [
-                                    MealItem(left: "empty..", right: nil, isPlaceholder: true, foodItem: nil)
-                                ]
+                                items: itemsForMeal("Snacks"),
+                                onDelete: handleDelete,
+                                onEdit: handleEdit,
+                                onTapAdd: { showLoggingSheet = true }
                             )
-                            .padding(.horizontal, 6)
-                            .padding(.bottom, 40) // so ofset doesnt cut off bottom
+                            
+                            Spacer(minLength: 10)
                         }
-                    } // ScrollView
-                    .padding(.bottom, 20)
+                        .padding(.bottom, 36)
+                    }
                     
                     Button {
                         showLoggingSheet = true
@@ -98,10 +100,10 @@ struct HomeView: View {
                             .foregroundStyle(.fblack)
                             .font(.system(.title2, design: .rounded))
                             .bold()
-                            .padding(10)
-                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.fblack, lineWidth: 1))
-                            .background(Color.fblack.opacity(0.3))
-                            .cornerRadius(10)
+                            .padding(12)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.fblack.opacity(0.25), lineWidth: 1))
+                            .background(Color.fblack.opacity(0.05))
+                            .cornerRadius(12)
                     }
                     .sheet(isPresented: $showLoggingSheet) {
                         LoggingSheetView { action in
@@ -124,10 +126,9 @@ struct HomeView: View {
                         .ignoresSafeArea()
                         .presentationDetents([.fraction(0.4), .medium])
                     }
-                    
-                } // VStack
+                }
                 .padding(35)
-            } // ZStack
+            }
             // Navigation destinations (all push so they get a back chevron)
             .navigationDestination(isPresented: $pushToSearch) {
                 SearchView()
@@ -144,111 +145,305 @@ struct HomeView: View {
                     .navigationTitle("Scan Barcode")
                     .navigationBarTitleDisplayMode(.inline)
             }
-        } // NavigationStack
+            .navigationDestination(item: $editingMeal) { meal in
+                EditMealView(meal: meal)
+            }
+            .onAppear {
+                loadMeals()
+            }
+            // Refresh when returning from pushed flows
+            .onChange(of: pushToSearch) { _, new in if !new { loadMeals() } }
+            .onChange(of: pushToScanFood) { _, new in if !new { loadMeals() } }
+            .onChange(of: pushToScanBarcode) { _, new in if !new { loadMeals() } }
+            .onChange(of: editingMeal) { _, new in
+                // when edit view pops (editingMeal becomes nil), reload
+                if new == nil { loadMeals() }
+            }
+        }
+    }
+
+    // MARK: - Data helpers
+
+    private func loadMeals() {
+        todaysMeals = MealStorage.shared.mealsForToday()
+    }
+
+    private func normalizedMealType(_ raw: String) -> String {
+        let s = raw.lowercased()
+        if s.hasPrefix("break") { return "Breakfast" }
+        if s.hasPrefix("lunch") { return "Lunch" }
+        if s.hasPrefix("dinner") { return "Dinner" }
+        if s.hasPrefix("snack") { return "Snacks" } // treat singular/plural the same
+        return raw
+    }
+
+    private func itemsForMeal(_ title: String) -> [MealItem] {
+        let meals = todaysMeals
+            .filter { normalizedMealType($0.mealType) == title }
+            .sorted { $0.date < $1.date }
+
+        guard !meals.isEmpty else {
+            return [] // show an empty-state card instead of a placeholder row
+        }
+
+        return meals.map { m in
+            let servingsText: String = {
+                let isInt = m.servings.rounded() == m.servings
+                let amount = isInt ? String(Int(m.servings)) : String(format: "%.1f", m.servings)
+                return "\(amount) " + (m.servings == 1 ? "serving" : "servings")
+            }()
+            return MealItem(
+                left: m.foodItem.name,
+                right: servingsText,
+                foodItem: m.foodItem,
+                loggedMealId: m.id,
+                loggedMeal: m
+            )
+        }
+    }
+
+    private func handleDelete(_ id: UUID) {
+        MealStorage.shared.deleteMeal(id: id)
+        loadMeals()
+    }
+
+    private func handleEdit(_ meal: LoggedMeal) {
+        editingMeal = meal
     }
 }
 
-// data model for rows/items inside a meal card
+// MARK: - Models for rows/items inside a meal card
+
 struct MealItem: Identifiable {
     let id: UUID = UUID()
     let left: String
     let right: String?
-    var isPlaceholder: Bool = false
     let foodItem: FoodItem?
+    let loggedMealId: UUID?
+    let loggedMeal: LoggedMeal?
 }
 
-struct MealCardTile: View {
+// MARK: - UI Components (Neutral style + custom swipe)
+
+private struct MealSectionCard: View {
     let title: String
-    let tint: Color
-    var items: [MealItem] = []
-    
+    let tint: Color   // small accent dot
+    var items: [MealItem]
+    var onDelete: (UUID) -> Void
+    var onEdit: (LoggedMeal) -> Void
+    var onTapAdd: () -> Void
+
     var body: some View {
-        ZStack {
-            // Semicircle tab with title
-            Circle()
-                .fill(tint)
-                .frame(height: 200)
-                .shadow(color: tint.opacity(0.12), radius: 6, y: 2)
-            
-            Text(title)
-                .foregroundStyle(tint == .fgray ? .fblack : .fwhite)
-                .font(.system(.title3, design: .rounded))
-                .bold()
-                .offset(y: -60)
-            
-            // items
-            ZStack {
-                RoundedRectangle(cornerRadius: 24)
+        VStack(spacing: 12) {
+            // Title row with tiny accent dot
+            HStack(spacing: 8) {
+                Circle()
                     .fill(tint)
-                    .offset(y: 60)
-                
-                // food items
-                VStack(spacing: 10) {
+                    .frame(width: 8, height: 8)
+                Text(title)
+                    .font(.system(.headline, design: .rounded))
+                    .foregroundStyle(.fblack)
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 12)
+
+            VStack(spacing: 10) {
+                if items.isEmpty {
+                    EmptyStateCard(onTapAdd: onTapAdd)
+                } else {
                     ForEach(items) { item in
-                        MealRow(left: item.left, right: item.right, isPlaceholder: item.isPlaceholder, tint: tint, foodItem: item.foodItem)
+                        SwipeableMealRow(
+                            item: item,
+                            onDelete: {
+                                if let id = item.loggedMealId { onDelete(id) }
+                            },
+                            onEdit: {
+                                if let m = item.loggedMeal { onEdit(m) }
+                            }
+                        )
                     }
                 }
-                .offset(y: 40)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 15)
             }
-            
+            .padding(.horizontal, 12)
+            .padding(.bottom, 14)
         }
-        .padding(.top, 6)
-        .padding(.vertical, 30)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.fwhite)
+                .shadow(color: .black.opacity(0.06), radius: 8, y: 3)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
+        )
+        .padding(.horizontal, 6)
     }
 }
 
-struct MealRow: View {
-    let left: String
-    let right: String?
-    var isPlaceholder: Bool = false
-    let tint: Color
-    let foodItem: FoodItem?
-    
+private struct SwipeableMealRow: View {
+    let item: MealItem
+    var onDelete: () -> Void
+    var onEdit: () -> Void
+
+    @State private var offsetX: CGFloat = 0
+    private let threshold: CGFloat = 80
+    private let maxSwipe: CGFloat = 120
+
+    private var isInteractive: Bool {
+        item.foodItem != nil
+    }
+
     var body: some View {
-        // Decide if this row should navigate
-        let shouldNavigate = !isPlaceholder && foodItem != nil
-        
-        if shouldNavigate, let foodItem = foodItem {
-            NavigationLink {
-                FoodView(foodItem: foodItem)
-            } label: {
-                rowContent
-            }
+        if isInteractive {
+            interactiveRow
         } else {
-            rowContent
+            staticRow
         }
     }
-    
-    @ViewBuilder
-    private var rowContent: some View {
-        HStack {
-            Text(left)
-                .foregroundStyle(tint == .fgray ? .fblack : (isPlaceholder ? .fwhite : .fblack))
-                .font(.system(.body, design: .rounded))
-            
-            Spacer()
-            
-            if let right {
-                Text(right)
-                    .foregroundStyle(tint == .fgray ? .fblack : (isPlaceholder ? .fwhite : .fblack))
-                    .font(.system(.body, design: .rounded))
-                
-                if !isPlaceholder && foodItem != nil {
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(tint == .fgray ? .fblack : (isPlaceholder ? .fwhite : .fblack))
-                        .font(.system(size: 14, weight: .semibold))
+
+    // Row with gestures (right swipe = delete, left swipe = edit)
+    private var interactiveRow: some View {
+        ZStack {
+            // Background actions
+            HStack {
+                // Right-swipe (leading) -> Delete (left side)
+                HStack(spacing: 8) {
+                    Image(systemName: "trash")
+                    Text("Delete")
+                        .fontWeight(.semibold)
                 }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color.red)
+                .clipShape(Capsule())
+                .opacity(offsetX > 0 ? min(Double(abs(offsetX) / threshold), 1.0) : 0)
+                .padding(.leading, 16)
+
+                Spacer()
+
+                // Left-swipe (trailing) -> Edit (right side)
+                HStack(spacing: 8) {
+                    Text("Edit")
+                        .fontWeight(.semibold)
+                    Image(systemName: "pencil")
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color.fgreen)
+                .clipShape(Capsule())
+                .opacity(offsetX < 0 ? min(Double(abs(offsetX) / threshold), 1.0) : 0)
+                .padding(.trailing, 16)
             }
+
+            // Foreground row content
+            rowContent(showHints: true)
+                .offset(x: offsetX)
+                .animation(.interactiveSpring(), value: offsetX)
         }
-        .padding(12)
-        .background(.fwhite.opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(.fwhite, lineWidth: 1)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 10, coordinateSpace: .local)
+                .onChanged { value in
+                    var x = value.translation.width
+                    x = min(max(x, -maxSwipe), maxSwipe)
+                    offsetX = x
+                }
+                .onEnded { _ in
+                    let x = offsetX
+                    withAnimation(.spring()) {
+                        offsetX = 0
+                    }
+                    if x >= threshold {
+                        // Right swipe -> Delete (left)
+                        onDelete()
+                    } else if x <= -threshold {
+                        // Left swipe -> Edit (right)
+                        onEdit()
+                    }
+                }
         )
+        // No tap action (card is not clickable)
+    }
+
+    // Non-interactive (placeholder) row: no gestures, no hints
+    private var staticRow: some View {
+        rowContent(showHints: false)
+    }
+
+    private func rowContent(showHints: Bool) -> some View {
+        HStack(spacing: 10) {
+            // Left red chevron to hint "swipe right to delete"
+            Image(systemName: "chevron.left")
+                .foregroundStyle(.red)
+                .opacity(showHints ? 0.7 : 0.0)
+                .frame(width: 14)
+
+            Text(item.left)
+                .foregroundStyle(.fblack)
+                .font(.system(.body, design: .rounded))
+                .lineLimit(1)
+
+            Spacer()
+
+            if let right = item.right {
+                Text(right)
+                    .foregroundStyle(.secondary)
+                    .font(.system(.subheadline, design: .rounded))
+                    .lineLimit(1)
+            }
+
+            // Right green chevron to hint "swipe left to edit"
+            Image(systemName: "chevron.right")
+                .foregroundStyle(.fgreen)
+                .opacity(showHints ? 0.8 : 0.0)
+                .frame(width: 14)
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.fwhite)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.04), radius: 3, y: 1)
+    }
+}
+
+private struct EmptyStateCard: View {
+    var onTapAdd: () -> Void
+
+    var body: some View {
+        Button {
+            onTapAdd()
+        } label: {
+            HStack {
+                Text("Nothing here yet")
+                    .foregroundStyle(.secondary)
+                    .font(.system(.body, design: .rounded))
+                Spacer()
+                Text("Tap Log Food")
+                    .foregroundStyle(.secondary)
+                    .font(.system(.subheadline, design: .rounded))
+            }
+            .padding(.vertical, 16)
+            .padding(.horizontal, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.secondary.opacity(0.08))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Nothing here yet. Tap to log food.")
     }
 }
 
