@@ -8,6 +8,16 @@
 import SwiftUI
 
 struct LoggingSheetView: View {
+    enum Action {
+        case search
+        case scanFood
+        case scanBarcode
+        case changeWeight
+    }
+
+    // Let the parent (HomeView) decide what to present full-screen
+    var onSelected: (Action) -> Void = { _ in }
+
     @Environment(\.dismiss) private var dismiss
     
     @State private var showWeightSheet = false
@@ -24,33 +34,29 @@ struct LoggingSheetView: View {
             ZStack {
                 Color.fwhite.ignoresSafeArea()
                 
-                // NAVLINKS
                 LazyVGrid(columns: columns, spacing: 20) {
-                    // Search Food
-                    TileComponent(
-                        icon: "magnifyingglass",
-                        title: "Search Food",
-                        tint: .fblack,
-                        destination: AnyView(SearchView())
-                    )
+                    // Search Food (notify parent to push)
+                    Button {
+                        onSelected(.search)
+                    } label: {
+                        TileComponent(icon: "magnifyingglass", title: "Search Food", tint: .fblack)
+                    }
+
+                    // Scan Food (notify parent to present full screen)
+                    Button {
+                        onSelected(.scanFood)
+                    } label: {
+                        TileComponent(icon: "camera.viewfinder", title: "Scan Food", tint: .fblack)
+                    }
+
+                    // Scan Barcode (notify parent to present full screen)
+                    Button {
+                        onSelected(.scanBarcode)
+                    } label: {
+                        TileComponent(icon: "barcode.viewfinder", title: "Scan Barcode", tint: .fblack)
+                    }
                     
-                    // Scan Food
-                    TileComponent(
-                        icon: "camera.viewfinder",
-                        title: "Scan Food",
-                        tint: .fblack,
-                        destination: AnyView(ScanFoodView())
-                    )
-                    
-                    // Scan Barcode
-                    TileComponent(
-                        icon: "barcode.viewfinder",
-                        title: "Scan Barcode",
-                        tint: .fblack,
-                        destination: AnyView(ScanBarcodeView())
-                    )
-                    
-                    // Weight (sheet)
+                    // Weight (sheet stays here)
                     Button {
                         showWeightSheet = true
                     } label: {
