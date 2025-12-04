@@ -83,12 +83,60 @@ struct TrendsView: View {
         return WeightStorage.shared.mostRecentWeight()?.unit ?? "lbs"
     }
 
-    private var averageWeight: Double {
+    // Weight change for the selected period (weekly/monthly)
+    private var weightChange: Double {
         let daysToShow = selectedRange == .weekly ? 7 : 30
         let weights = WeightStorage.shared.weightsForLastDays(daysToShow)
-        guard !weights.isEmpty else { return currentWeight }
-        let total = weights.reduce(0.0) { $0 + $1.weight }
-        return total / Double(weights.count)
+        guard weights.count >= 2 else { return 0 }
+        let oldest = weights.first!.weight
+        let newest = weights.last!.weight
+        return newest - oldest
+    }
+
+    // Yesterday's weight for daily comparison
+    private var yesterdayWeight: Double? {
+        let calendar = Calendar.current
+        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: Date()) else { return nil }
+        let startOfYesterday = calendar.startOfDay(for: yesterday)
+        let endOfYesterday = calendar.date(byAdding: .day, value: 1, to: startOfYesterday)!
+
+        let weights = WeightStorage.shared.loadWeights()
+        let yesterdayEntry = weights.first { entry in
+            entry.date >= startOfYesterday && entry.date < endOfYesterday
+        }
+        return yesterdayEntry?.weight
+    }
+
+    private var weightChangeFromYesterday: Double? {
+        guard let yesterday = yesterdayWeight else { return nil }
+        return currentWeight - yesterday
+    }
+
+    // Weight Journey stats
+    private var startingWeight: Double {
+        return WeightStorage.shared.oldestWeight()?.weight ?? userModel.currentWeight ?? 170
+    }
+
+    private var totalWeightChange: Double {
+        return currentWeight - startingWeight
+    }
+
+    private var isLosingWeight: Bool {
+        guard let goal = userModel.goalWeight else { return true }
+        return goal < startingWeight
+    }
+
+    private var weightToGo: Double {
+        guard let goal = userModel.goalWeight else { return 0 }
+        return abs(currentWeight - goal)
+    }
+
+    private var progressPercent: Double {
+        guard let goal = userModel.goalWeight else { return 0 }
+        let totalNeeded = abs(goal - startingWeight)
+        guard totalNeeded > 0 else { return 100 }
+        let achieved = abs(totalWeightChange)
+        return min((achieved / totalNeeded) * 100, 100)
     }
 
     private var topFoods: [(name: String, count: Int)] {
@@ -234,6 +282,85 @@ struct TrendsView: View {
 
                     ScrollView {
                         VStack(spacing: 16) {
+                            // Weight Journey card (always visible)
+                            RoundedCard {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Weight Journey")
+                                        .foregroundStyle(.fblack)
+                                        .font(.system(.headline, design: .rounded))
+
+                                    HStack(spacing: 20) {
+                                        // Started
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Started")
+                                                .foregroundStyle(.secondary)
+                                                .font(.system(.caption, design: .rounded))
+                                            Text("\(Int(startingWeight)) \(currentWeightUnit)")
+                                                .foregroundStyle(.fblack)
+                                                .font(.system(.title3, design: .rounded))
+                                                .fontWeight(.semibold)
+                                        }
+
+                                        Image(systemName: "arrow.right")
+                                            .foregroundStyle(.secondary)
+                                            .font(.system(size: 14))
+
+                                        // Now
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Now")
+                                                .foregroundStyle(.secondary)
+                                                .font(.system(.caption, design: .rounded))
+                                            Text("\(Int(currentWeight)) \(currentWeightUnit)")
+                                                .foregroundStyle(.fgreen)
+                                                .font(.system(.title3, design: .rounded))
+                                                .fontWeight(.semibold)
+                                        }
+
+                                        Spacer()
+
+                                        // Change badge
+                                        VStack(alignment: .trailing, spacing: 4) {
+                                            Text("Progress")
+                                                .foregroundStyle(.secondary)
+                                                .font(.system(.caption, design: .rounded))
+                                            HStack(spacing: 4) {
+                                                Image(systemName: totalWeightChange < 0 ? "arrow.down" : (totalWeightChange > 0 ? "arrow.up" : "minus"))
+                                                    .font(.system(size: 12, weight: .bold))
+                                                Text("\(abs(totalWeightChange), specifier: "%.1f") \(currentWeightUnit)")
+                                                    .fontWeight(.semibold)
+                                            }
+                                            .foregroundStyle(isLosingWeight ? (totalWeightChange <= 0 ? .fgreen : .fred) : (totalWeightChange >= 0 ? .fgreen : .fred))
+                                            .font(.system(.subheadline, design: .rounded))
+                                        }
+                                    }
+
+                                    // Progress bar toward goal
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        HStack {
+                                            Text("\(Int(progressPercent))% to goal")
+                                                .foregroundStyle(.secondary)
+                                                .font(.system(.caption, design: .rounded))
+                                            Spacer()
+                                            Text("Goal: \(Int(weightGoal)) \(currentWeightUnit)")
+                                                .foregroundStyle(.secondary)
+                                                .font(.system(.caption, design: .rounded))
+                                        }
+
+                                        GeometryReader { geo in
+                                            ZStack(alignment: .leading) {
+                                                Capsule()
+                                                    .fill(Color.secondary.opacity(0.2))
+                                                    .frame(height: 8)
+                                                Capsule()
+                                                    .fill(Color.fgreen)
+                                                    .frame(width: geo.size.width * CGFloat(progressPercent / 100), height: 8)
+                                            }
+                                        }
+                                        .frame(height: 8)
+                                    }
+                                }
+                            }
+
                             // Calories card (daily shows "Calories", non-daily shows "Average Calories")
                             RoundedCard {
                                 HStack(alignment: .firstTextBaseline) {
@@ -323,38 +450,67 @@ struct TrendsView: View {
 
                             // Weight card
                             RoundedCard {
-                                HStack(alignment: .firstTextBaseline) {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text(selectedRange == .daily ? "Weight" : "Average Weight")
-                                            .foregroundStyle(.fblack)
-                                            .font(.system(.headline, design: .rounded))
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack(alignment: .firstTextBaseline) {
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            Text(selectedRange == .daily ? "Today's Weight" : (selectedRange == .weekly ? "This Week" : "This Month"))
+                                                .foregroundStyle(.fblack)
+                                                .font(.system(.headline, design: .rounded))
+                                        }
 
-                                        Text("Goal: \(Int(weightGoal)) lbs")
-                                            .foregroundStyle(.secondary)
-                                            .font(.system(.subheadline, design: .rounded))
+                                        Spacer()
+
+                                        if selectedRange == .daily {
+                                            // Daily: show current weight with vs yesterday
+                                            VStack(alignment: .trailing, spacing: 4) {
+                                                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                                    Text("\(Int(currentWeight))")
+                                                        .foregroundStyle(.fgreen)
+                                                        .font(.system(.title2, design: .rounded))
+                                                        .fontWeight(.bold)
+                                                    Text(currentWeightUnit)
+                                                        .foregroundStyle(.secondary)
+                                                        .font(.system(.subheadline, design: .rounded))
+                                                }
+
+                                                if let change = weightChangeFromYesterday {
+                                                    HStack(spacing: 2) {
+                                                        Image(systemName: change < 0 ? "arrow.down" : (change > 0 ? "arrow.up" : "minus"))
+                                                            .font(.system(size: 10, weight: .semibold))
+                                                        Text("\(abs(change), specifier: "%.1f") vs yesterday")
+                                                    }
+                                                    .foregroundStyle(isLosingWeight ? (change <= 0 ? .fgreen : .fred) : (change >= 0 ? .fgreen : .fred))
+                                                    .font(.system(.caption, design: .rounded))
+                                                }
+                                            }
+                                        } else {
+                                            // Weekly/Monthly: show weight change for period
+                                            VStack(alignment: .trailing, spacing: 4) {
+                                                HStack(spacing: 4) {
+                                                    Image(systemName: weightChange < 0 ? "arrow.down" : (weightChange > 0 ? "arrow.up" : "minus"))
+                                                        .font(.system(size: 14, weight: .bold))
+                                                    Text("\(abs(weightChange), specifier: "%.1f") \(currentWeightUnit)")
+                                                        .font(.system(.title2, design: .rounded))
+                                                        .fontWeight(.bold)
+                                                }
+                                                .foregroundStyle(isLosingWeight ? (weightChange <= 0 ? .fgreen : .fred) : (weightChange >= 0 ? .fgreen : .fred))
+
+                                                Text(selectedRange == .weekly ? "this week" : "this month")
+                                                    .foregroundStyle(.secondary)
+                                                    .font(.system(.caption, design: .rounded))
+                                            }
+                                        }
                                     }
 
-                                    Spacer()
-
-                                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                        Text(selectedRange == .daily ? "\(Int(currentWeight))" : "\(Int(averageWeight))")
-                                            .foregroundStyle(.fgreen)
-                                            .font(.system(.title2, design: .rounded))
-                                            .fontWeight(.bold)
-                                        Text(currentWeightUnit)
-                                            .foregroundStyle(.secondary)
-                                            .font(.system(.subheadline, design: .rounded))
-                                    }
-                                }
-
-                                // Weight graph (only for weekly/monthly)
-                                if selectedRange != .daily {
-                                    if weightEntries.isEmpty {
-                                        GraphPlaceholder()
-                                            .padding(.top, 10)
-                                    } else {
-                                        WeightChart(entries: weightEntries)
-                                            .padding(.top, 10)
+                                    // Weight graph (only for weekly/monthly)
+                                    if selectedRange != .daily {
+                                        if weightEntries.isEmpty {
+                                            GraphPlaceholder()
+                                                .padding(.top, 10)
+                                        } else {
+                                            WeightChart(entries: weightEntries)
+                                                .padding(.top, 10)
+                                        }
                                     }
                                 }
                             }
