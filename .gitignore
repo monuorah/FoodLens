@@ -1,26 +1,26 @@
-//
-//  .gitignore
-//  FoodLens
-//  Created by Melanie & Muna on 12/2/25.
-//
+#
+#   .gitignore
+#   FoodLens
+#   Created by Melanie & Muna on 12/2/25.
+#
 
-//# macOS junk
+# macOS junk
 .DS_Store
 *.DS_Store
 
-//# Xcode user-specific junk
+# Xcode user-specific junk
 xcuserdata/
 *.xcuserstate
 DerivedData/
 
-//# Swift Package Manager junk
+# Swift Package Manager junk
 .swiftpm/
 .build/
 
-//# Logs
+# Logs
 *.log
 
-//# Ignore Xcode Previews cache
+# Ignore Xcode Previews cache
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 FoodLens.xcodeproj/project.xcworkspace/xcshareddata/
 FoodLens/1.Backend/4.Utils/Config.swift
