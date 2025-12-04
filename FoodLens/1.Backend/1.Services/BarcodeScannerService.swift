@@ -2,7 +2,7 @@
 //  BarcodeScannerService.swift
 //  FoodLens
 //
-//  Created by Claude on 12/4/24.
+//  Created by Muna on 12/4/24.
 //
 
 import AVFoundation
