@@ -347,13 +347,15 @@ struct TrendsView: View {
                                     }
                                 }
 
-                                // Weight graph
-                                if weightEntries.isEmpty {
-                                    GraphPlaceholder()
-                                        .padding(.top, 10)
-                                } else {
-                                    WeightChart(entries: weightEntries)
-                                        .padding(.top, 10)
+                                // Weight graph (only for weekly/monthly)
+                                if selectedRange != .daily {
+                                    if weightEntries.isEmpty {
+                                        GraphPlaceholder()
+                                            .padding(.top, 10)
+                                    } else {
+                                        WeightChart(entries: weightEntries)
+                                            .padding(.top, 10)
+                                    }
                                 }
                             }
 
@@ -422,6 +424,10 @@ struct TrendsView: View {
             }
             .onAppear {
                 loadMeals()
+                // Auto-generate mock data only if user has no meals yet
+                if MealStorage.shared.loadMeals().isEmpty {
+                    MockDataGenerator.generateAllMockData()
+                }
             }
             .onChange(of: selectedRange) { _, _ in
                 updateWeightEntries()
@@ -625,6 +631,12 @@ private struct WeightChart: View {
                     )
                 )
                 .interpolationMethod(.catmullRom)
+
+                PointMark(
+                    x: .value("Date", entry.date),
+                    y: .value("Weight", entry.weight)
+                )
+                .foregroundStyle(Color.fgreen)
             }
         }
         .chartXAxis {
@@ -665,6 +677,12 @@ private struct CalorieChart: View {
                     )
                 )
                 .interpolationMethod(.catmullRom)
+
+                PointMark(
+                    x: .value("Date", entry.date),
+                    y: .value("Calories", entry.calories)
+                )
+                .foregroundStyle(Color.forange)
             }
         }
         .chartXAxis {
