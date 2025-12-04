@@ -67,36 +67,65 @@ struct MockDataGenerator {
     }
 
     /// Call this once to populate fake weight data for the past 30 days
+    /// Treats startWeight as the BEGINNING of their journey (30 days ago), shows progress toward goal
     static func generateMockWeights(startWeight: Double = 175, targetWeight: Double = 165, unit: String = "lbs") {
+        print("🔍 DEBUG: generateMockWeights called with startWeight=\(startWeight), targetWeight=\(targetWeight), unit=\(unit)")
+
         let calendar = Calendar.current
         let totalDays = 30
-        let weightChange = targetWeight - startWeight
-        let dailyChange = weightChange / Double(totalDays)
+
+        // startWeight = what they weighed when they started (30 days ago)
+        // targetWeight = their goal weight
+        // We'll show realistic progress from start toward goal over 30 days
+
+        let isLosingWeight = startWeight > targetWeight
+        print("🔍 DEBUG: isLosingWeight=\(isLosingWeight)")
+
+        // Realistic monthly progress: 5-8 lbs per month
+        let monthlyProgress: Double = 8.0
+
+        // Calculate current weight after 30 days of progress
+        let currentWeight = isLosingWeight ? (startWeight - monthlyProgress) : (startWeight + monthlyProgress)
+
+        print("🔍 DEBUG: Journey: \(startWeight) (30 days ago) → \(currentWeight) (today), goal: \(targetWeight)")
+
+        // Daily change to get from startWeight (30 days ago) to currentWeight (today)
+        let totalChange = currentWeight - startWeight
+        let dailyChange = totalChange / Double(totalDays)
 
         // Generate weight entries every 2-3 days
-        var currentDay = 0
-        while currentDay < totalDays {
-            guard let date = calendar.date(byAdding: .day, value: -currentDay, to: Date()) else { break }
+        var daysAgo = totalDays
+        while daysAgo >= 0 {
+            guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: Date()) else {
+                daysAgo -= Int.random(in: 2...3)
+                continue
+            }
 
-            // Add some randomness to simulate real weight fluctuations
-            let baseWeight = startWeight + (dailyChange * Double(currentDay))
+            // Weight progresses from startWeight (daysAgo=30) to currentWeight (daysAgo=0)
+            let daysOfProgress = totalDays - daysAgo
+            let baseWeight = startWeight + (dailyChange * Double(daysOfProgress))
             let randomVariation = Double.random(in: -1.5...1.5)
             let weight = baseWeight + randomVariation
 
             let entry = WeightEntry(weight: weight, unit: unit, date: date)
             WeightStorage.shared.saveWeight(entry)
 
-            // Skip 2-3 days
-            currentDay += Int.random(in: 2...3)
+            daysAgo -= Int.random(in: 2...3)
         }
 
-        print("✅ Generated mock weights for past 30 days (trend: \(startWeight) → \(targetWeight) \(unit))")
+        let direction = isLosingWeight ? "DOWN" : "UP"
+        print("✅ Generated mock weights: \(startWeight) → \(currentWeight) \(unit) (trending \(direction), \(monthlyProgress) lbs progress toward goal of \(targetWeight) \(unit))")
     }
 
     /// Call this to generate both meals and weights at once
-    static func generateAllMockData() {
+    static func generateAllMockData(startWeight: Double? = nil, targetWeight: Double? = nil, unit: String = "lbs") {
         generateMockMeals()
-        generateMockWeights()
+
+        // Use provided weights or defaults
+        let start = startWeight ?? 175
+        let target = targetWeight ?? 165
+        generateMockWeights(startWeight: start, targetWeight: target, unit: unit)
+
         print("✅ All mock data generated!")
     }
 }
