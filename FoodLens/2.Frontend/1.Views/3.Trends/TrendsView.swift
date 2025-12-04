@@ -423,11 +423,14 @@ struct TrendsView: View {
                 .padding(35)
             }
             .onAppear {
-                loadMeals()
                 // Auto-generate mock data only if user has no meals yet
                 if MealStorage.shared.loadMeals().isEmpty {
-                    MockDataGenerator.generateAllMockData()
+                    let startWeight = userModel.currentWeight
+                    let targetWeight = userModel.goalWeight
+                    let unit = userModel.selectedWeightUnit == .imperial ? "lbs" : "kg"
+                    MockDataGenerator.generateAllMockData(startWeight: startWeight, targetWeight: targetWeight, unit: unit)
                 }
+                loadMeals()
             }
             .onChange(of: selectedRange) { _, _ in
                 updateWeightEntries()
