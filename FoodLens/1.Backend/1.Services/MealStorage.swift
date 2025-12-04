@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FirebaseAuth
 
 struct LoggedMeal: Codable, Identifiable {
     let id: UUID
@@ -30,19 +31,25 @@ struct LoggedMeal: Codable, Identifiable {
 
 class MealStorage {
     static let shared = MealStorage()
-    private let key = "savedMeals"
-    
+
+    private var userKey: String {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            return "savedMeals_guest" // Fallback for signed-out state
+        }
+        return "savedMeals_\(userId)"
+    }
+
     func saveMeal(_ meal: LoggedMeal) {
         var meals = loadMeals()
         meals.append(meal)
-        
+
         if let data = try? JSONEncoder().encode(meals) {
-            UserDefaults.standard.set(data, forKey: key)
+            UserDefaults.standard.set(data, forKey: userKey)
         }
     }
-    
+
     func loadMeals() -> [LoggedMeal] {
-        guard let data = UserDefaults.standard.data(forKey: key),
+        guard let data = UserDefaults.standard.data(forKey: userKey),
               let meals = try? JSONDecoder().decode([LoggedMeal].self, from: data) else {
             return []
         }
