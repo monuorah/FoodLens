@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct FoodItem: Identifiable, Codable {
+struct FoodItem: Identifiable, Codable, Hashable {
     let id: Int
     let name: String
     let calories: Double
