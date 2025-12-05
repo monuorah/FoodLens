@@ -2,7 +2,7 @@
 //  SignInView.swift
 //  FoodLens
 //
-//  Created by Melanie Escobar on 11/7/25.
+//  Created by Melanie & Muna on 11/7/25.
 //
 
 import SwiftUI

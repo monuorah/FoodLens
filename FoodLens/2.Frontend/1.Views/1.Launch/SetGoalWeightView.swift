@@ -2,7 +2,7 @@
 //  SetGoalWeightView.swift
 //  FoodLens
 //
-//  Created by Melanie Escobar on 11/9/25.
+//  Created by Melanie & Muna on 11/9/25.
 //
 
 import SwiftUI

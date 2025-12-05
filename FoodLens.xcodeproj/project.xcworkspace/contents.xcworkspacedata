@@ -4,25 +4,4 @@
    <FileRef
       location = "self:">
    </FileRef>
-   <FileRef
-      location = "group:DirectGeminiCoach.swift">
-   </FileRef>
-   <FileRef
-      location = "group:FirebaseAICoach.swift">
-   </FileRef>
-   <FileRef
-      location = "group:DirectGeminiCoach 2.swift">
-   </FileRef>
-   <FileRef
-      location = "group:FirebaseAIModelCoach.swift">
-   </FileRef>
-   <FileRef
-      location = "group:FirebaseAIPromptTemplateCoach.swift">
-   </FileRef>
-   <FileRef
-      location = "group:FirebaseAIPromptTemplateCoach 2.swift">
-   </FileRef>
-   <FileRef
-      location = "group:FirebaseAIPromptTemplateCoach 3.swift">
-   </FileRef>
 </Workspace>

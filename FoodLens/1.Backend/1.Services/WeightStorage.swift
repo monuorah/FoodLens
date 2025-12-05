@@ -2,7 +2,7 @@
 //  WeightStorage.swift
 //  FoodLens
 //
-//  Created by Muna on 12/2/24.
+//  Created by Melanie & Muna on 12/2/24.
 //
 
 import Foundation

@@ -128,6 +128,29 @@ struct TrendsView: View {
         return total / Double(weights.count)
     }
 
+    // MARK: - Weight Journey
+
+    private var startingWeight: Double {
+        WeightStorage.shared.oldestWeight()?.weight ?? userModel.currentWeight ?? currentWeight
+    }
+
+    private var totalWeightChange: Double {
+        currentWeight - startingWeight
+    }
+
+    private var isLosingWeight: Bool {
+        guard let goal = userModel.goalWeight ?? userModel.currentWeight else { return true }
+        return goal < startingWeight
+    }
+
+    private var progressPercent: Double {
+        guard let goal = userModel.goalWeight else { return 0 }
+        let totalNeeded = abs(goal - startingWeight)
+        guard totalNeeded > 0 else { return 100 }
+        let achieved = abs(totalWeightChange)
+        return min((achieved / totalNeeded) * 100, 100)
+    }
+
     // MARK: - Foods
 
     private var macroGoals: (carbs: Int, fat: Int, protein: Int) {
@@ -246,6 +269,86 @@ struct TrendsView: View {
 
                     ScrollView {
                         VStack(spacing: 16) {
+
+                            // Weight Journey
+                            RoundedCard {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Weight Journey")
+                                        .foregroundStyle(.fblack)
+                                        .font(.system(.headline, design: .rounded))
+
+                                    HStack(spacing: 20) {
+                                        // Started
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Started")
+                                                .foregroundStyle(.secondary)
+                                                .font(.system(.caption, design: .rounded))
+                                            Text("\(Int(startingWeight)) \(currentWeightUnit)")
+                                                .foregroundStyle(.fblack)
+                                                .font(.system(.title3, design: .rounded))
+                                                .fontWeight(.semibold)
+                                        }
+
+                                        Image(systemName: "arrow.right")
+                                            .foregroundStyle(.secondary)
+                                            .font(.system(size: 14))
+
+                                        // Now
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Now")
+                                                .foregroundStyle(.secondary)
+                                                .font(.system(.caption, design: .rounded))
+                                            Text("\(Int(currentWeight)) \(currentWeightUnit)")
+                                                .foregroundStyle(.fgreen)
+                                                .font(.system(.title3, design: .rounded))
+                                                .fontWeight(.semibold)
+                                        }
+
+                                        Spacer()
+
+                                        // Change badge
+                                        VStack(alignment: .trailing, spacing: 4) {
+                                            Text("Progress")
+                                                .foregroundStyle(.secondary)
+                                                .font(.system(.caption, design: .rounded))
+                                            HStack(spacing: 4) {
+                                                Image(systemName: totalWeightChange < 0 ? "arrow.down" : (totalWeightChange > 0 ? "arrow.up" : "minus"))
+                                                    .font(.system(size: 12, weight: .bold))
+                                                Text("\(abs(totalWeightChange), specifier: "%.1f") \(currentWeightUnit)")
+                                                    .fontWeight(.semibold)
+                                            }
+                                            .foregroundStyle(isLosingWeight ? (totalWeightChange <= 0 ? .fgreen : .fred) : (totalWeightChange >= 0 ? .fgreen : .fred))
+                                            .font(.system(.subheadline, design: .rounded))
+                                        }
+                                    }
+
+                                    // Progress bar toward goal
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        HStack {
+                                            Text("\(Int(progressPercent))% to goal")
+                                                .foregroundStyle(.secondary)
+                                                .font(.system(.caption, design: .rounded))
+                                            Spacer()
+                                            Text("Goal: \(Int(weightGoal)) \(selectedWeightUnitSymbol)")
+                                                .foregroundStyle(.secondary)
+                                                .font(.system(.caption, design: .rounded))
+                                        }
+
+                                        GeometryReader { geo in
+                                            ZStack(alignment: .leading) {
+                                                Capsule()
+                                                    .fill(Color.secondary.opacity(0.2))
+                                                    .frame(height: 8)
+                                                Capsule()
+                                                    .fill(Color.fgreen)
+                                                    .frame(width: geo.size.width * CGFloat(progressPercent / 100.0), height: 8)
+                                            }
+                                        }
+                                        .frame(height: 8)
+                                    }
+                                }
+                            }
+
                             // Calories
                             RoundedCard {
                                 HStack(alignment: .firstTextBaseline) {
@@ -295,26 +398,35 @@ struct TrendsView: View {
                                 }
                             }
 
-                            // Macros
+                            // Macros (Goal/Actual look)
                             RoundedCard {
                                 VStack(alignment: .leading, spacing: 14) {
                                     Text("Macros")
                                         .foregroundStyle(.fblack)
                                         .font(.system(.headline, design: .rounded))
 
-                                    MacroRow(name: "Carbs",   goalPercent: macroGoals.carbs,
-                                             actualPercent: selectedRange == .daily ? carbsPercent : averageMacroPercents.carbs,
-                                             tint: .fgreen)
-                                    MacroRow(name: "Fat",     goalPercent: macroGoals.fat,
-                                             actualPercent: selectedRange == .daily ? fatPercent : averageMacroPercents.fat,
-                                             tint: .fred)
-                                    MacroRow(name: "Protein", goalPercent: macroGoals.protein,
-                                             actualPercent: selectedRange == .daily ? proteinPercent : averageMacroPercents.protein,
-                                             tint: .forange)
+                                    GoalActualMacroRow(
+                                        name: "Carbs",
+                                        goalPercent: macroGoals.carbs,
+                                        actualPercent: selectedRange == .daily ? carbsPercent : averageMacroPercents.carbs,
+                                        tint: .fgreen
+                                    )
+                                    GoalActualMacroRow(
+                                        name: "Fat",
+                                        goalPercent: macroGoals.fat,
+                                        actualPercent: selectedRange == .daily ? fatPercent : averageMacroPercents.fat,
+                                        tint: .fred
+                                    )
+                                    GoalActualMacroRow(
+                                        name: "Protein",
+                                        goalPercent: macroGoals.protein,
+                                        actualPercent: selectedRange == .daily ? proteinPercent : averageMacroPercents.protein,
+                                        tint: .forange
+                                    )
                                 }
                             }
 
-                            // Weight
+                            // Weight (period change + chart)
                             RoundedCard {
                                 HStack(alignment: .firstTextBaseline) {
                                     VStack(alignment: .leading, spacing: 6) {
@@ -509,6 +621,67 @@ private extension InsightSeverity {
         case .warning: return "exclamationmark.triangle.fill"
         case .alert:   return "exclamationmark.octagon.fill"
         }
+    }
+}
+
+// MARK: - “Goal / Actual” macro rows
+
+private struct GoalActualMacroRow: View {
+    let name: String
+    let goalPercent: Int
+    let actualPercent: Int
+    let tint: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(name)
+                .foregroundStyle(.fblack)
+                .font(.system(.subheadline, design: .rounded))
+                .fontWeight(.semibold)
+
+            // Goal
+            HStack {
+                Text("Goal")
+                    .foregroundStyle(.secondary)
+                    .font(.system(.caption, design: .rounded))
+                    .frame(width: 50, alignment: .leading)
+                GoalActualProgressBar(value: goalPercent, tint: tint.opacity(0.6))
+                Text("\(goalPercent)%")
+                    .foregroundStyle(.secondary)
+                    .font(.system(.caption, design: .rounded))
+            }
+
+            // Actual
+            HStack {
+                Text("Actual")
+                    .foregroundStyle(.secondary)
+                    .font(.system(.caption, design: .rounded))
+                    .frame(width: 50, alignment: .leading)
+                GoalActualProgressBar(value: actualPercent, tint: tint)
+                Text("\(actualPercent)%")
+                    .foregroundStyle(.secondary)
+                    .font(.system(.caption, design: .rounded))
+            }
+        }
+    }
+}
+
+private struct GoalActualProgressBar: View {
+    let value: Int // 0...100
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.secondary.opacity(0.15))
+                Capsule()
+                    .fill(tint)
+                    .frame(width: geo.size.width * CGFloat(min(max(value, 0), 100)) / 100.0)
+            }
+        }
+        .frame(height: 8)
+        .frame(maxWidth: .infinity)
     }
 }
 
