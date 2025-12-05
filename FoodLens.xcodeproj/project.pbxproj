@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		895BF7232EE23155000316C4 /* FirebaseAI in Frameworks */ = {isa = PBXBuildFile; productRef = 895BF7222EE23155000316C4 /* FirebaseAI */; };
+		895BF7252EE23156000316C4 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = 895BF7242EE23155000316C4 /* FirebaseAppCheck */; };
+		895BF7272EE23156000316C4 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 895BF7262EE23156000316C4 /* FirebaseFunctions */; };
 		89CA072D2EDE5F0A0063F970 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 89CA072C2EDE5F0A0063F970 /* FirebaseAuth */; };
 		89CA072F2EDE5F0A0063F970 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 89CA072E2EDE5F0A0063F970 /* FirebaseCore */; };
 		89CA07312EDE5F0A0063F970 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 89CA07302EDE5F0A0063F970 /* FirebaseFirestore */; };
@@ -41,9 +44,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				895BF7232EE23155000316C4 /* FirebaseAI in Frameworks */,
+				895BF7272EE23156000316C4 /* FirebaseFunctions in Frameworks */,
 				89CA072F2EDE5F0A0063F970 /* FirebaseCore in Frameworks */,
 				89CA07332EDE5F0A0063F970 /* FirebaseStorage in Frameworks */,
 				89CA072D2EDE5F0A0063F970 /* FirebaseAuth in Frameworks */,
+				895BF7252EE23156000316C4 /* FirebaseAppCheck in Frameworks */,
 				89CA07312EDE5F0A0063F970 /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -89,6 +95,9 @@
 				89CA072E2EDE5F0A0063F970 /* FirebaseCore */,
 				89CA07302EDE5F0A0063F970 /* FirebaseFirestore */,
 				89CA07322EDE5F0A0063F970 /* FirebaseStorage */,
+				895BF7222EE23155000316C4 /* FirebaseAI */,
+				895BF7242EE23155000316C4 /* FirebaseAppCheck */,
+				895BF7262EE23156000316C4 /* FirebaseFunctions */,
 			);
 			productName = FoodLens;
 			productReference = BAB580C32EDF8FA8007F6715 /* FoodLens.app */;
@@ -379,6 +388,21 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		895BF7222EE23155000316C4 /* FirebaseAI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 89CA072B2EDE5F0A0063F970 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAI;
+		};
+		895BF7242EE23155000316C4 /* FirebaseAppCheck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 89CA072B2EDE5F0A0063F970 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAppCheck;
+		};
+		895BF7262EE23156000316C4 /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 89CA072B2EDE5F0A0063F970 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
+		};
 		89CA072C2EDE5F0A0063F970 /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 89CA072B2EDE5F0A0063F970 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

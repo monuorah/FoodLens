@@ -22,6 +22,11 @@ struct TrendsView: View {
     @State private var todaysMeals: [LoggedMeal] = []
     @State private var weightEntries: [WeightEntry] = []
 
+    // Insights VM (LLM coaching via Firebase AI template)
+    @StateObject private var insightsVM = InsightsViewModel(
+        coach: LLMCoachService() // uses FirebaseAI template "nutritioncoach"
+    )
+
     // MARK: - Calories/Macros
 
     private var totalCalories: Double {
@@ -380,7 +385,7 @@ struct TrendsView: View {
                                 }
                             }
 
-                            // Insights (sample)
+                            // Insights (LLM coaching)
                             Text("Insights")
                                 .foregroundStyle(.fblack)
                                 .font(.system(.title2, design: .rounded))
@@ -388,18 +393,65 @@ struct TrendsView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.top, 10)
 
-                            InsightCard(
-                                accent: .fgreen,
-                                title: "Great Fiber Intake",
-                                subtitle: "You're meeting your fiber goals",
-                                trailingIcon: "checkmark.seal.fill"
-                            )
-                            InsightCard(
-                                accent: .fred,
-                                title: "Low Protein Detected",
-                                subtitle: "You averaged 45g/day this week (Goal: 80g)",
-                                trailingIcon: "exclamationmark.triangle.fill"
-                            )
+                            if insightsVM.isLoading {
+                                RoundedCard {
+                                    HStack {
+                                        ProgressView().tint(.fgreen)
+                                        Text("Generating your weekly coaching…")
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            } else if let advice = insightsVM.advice {
+                                // Summary card (new)
+                                if let summary = advice.summary, !summary.isEmpty {
+                                    RoundedCard {
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text("Summary")
+                                                .foregroundStyle(.fblack)
+                                                .font(.system(.headline, design: .rounded))
+                                            Text(summary)
+                                                .foregroundStyle(.secondary)
+                                                .font(.system(.subheadline, design: .rounded))
+                                        }
+                                    }
+                                }
+
+                                // Insight cards
+                                ForEach(advice.insights) { ins in
+                                    InsightCard(
+                                        accent: ins.severity.accentColor,
+                                        title: ins.title,
+                                        subtitle: ins.message,
+                                        trailingIcon: ins.severity.trailingIcon
+                                    )
+                                }
+
+                                // Actions
+                                if !advice.actions.isEmpty {
+                                    RoundedCard {
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text("Next steps")
+                                                .foregroundStyle(.fblack)
+                                                .font(.system(.headline, design: .rounded))
+                                            ForEach(advice.actions, id: \.self) { a in
+                                                HStack(alignment: .top, spacing: 8) {
+                                                    Image(systemName: "checkmark.circle")
+                                                        .foregroundStyle(.fgreen)
+                                                    Text(a)
+                                                        .foregroundStyle(.secondary)
+                                                        .font(.system(.subheadline, design: .rounded))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                RoundedCard {
+                                    Text("No insights yet. Log food to see coaching here.")
+                                        .foregroundStyle(.secondary)
+                                        .font(.system(.subheadline, design: .rounded))
+                                }
+                            }
                         }
                         .padding(.bottom, 24)
                     }
@@ -407,10 +459,12 @@ struct TrendsView: View {
                 .padding(35)
             }
             .onAppear {
-                loadMeals() // No mock seeding
+                loadMeals()
+                refreshInsights()
             }
             .onChange(of: selectedRange) { _, _ in
                 updateWeightEntries()
+                refreshInsights()
             }
         }
     }
@@ -424,255 +478,37 @@ struct TrendsView: View {
         let daysToShow = selectedRange == .weekly ? 7 : 30
         weightEntries = WeightStorage.shared.weightsForLastDays(daysToShow)
     }
-}
 
-// MARK: - Helpers
-
-private struct RoundedCard<Content: View>: View {
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            content
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.fwhite)
-                .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
-        )
+    private func refreshInsights() {
+        let window: StatsWindow = {
+            switch selectedRange {
+            case .daily:   return .daily
+            case .weekly:  return .weekly
+            case .monthly: return .monthly
+            }
+        }()
+        Task { await insightsVM.refresh(window: window, userModel: userModel) }
     }
 }
 
-private struct MacroRow: View {
-    let name: String
-    let goalPercent: Int
-    let actualPercent: Int
-    let tint: Color
+// MARK: - Helpers (UI mapping for severity)
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(name)
-                .foregroundStyle(.fblack)
-                .font(.system(.subheadline, design: .rounded))
-                .fontWeight(.semibold)
-
-            HStack {
-                Text("Goal")
-                    .foregroundStyle(.secondary)
-                    .font(.system(.caption, design: .rounded))
-                    .frame(width: 50, alignment: .leading)
-                ProgressBar(value: goalPercent, tint: tint.opacity(0.6))
-                Text("\(goalPercent)%")
-                    .foregroundStyle(.secondary)
-                    .font(.system(.caption, design: .rounded))
-            }
-
-            HStack {
-                Text("Actual")
-                    .foregroundStyle(.secondary)
-                    .font(.system(.caption, design: .rounded))
-                    .frame(width: 50, alignment: .leading)
-                ProgressBar(value: actualPercent, tint: tint)
-                Text("\(actualPercent)%")
-                    .foregroundStyle(.secondary)
-                    .font(.system(.caption, design: .rounded))
-            }
+private extension InsightSeverity {
+    var accentColor: Color {
+        switch self {
+        case .success: return .fgreen
+        case .info:    return .fblue
+        case .warning: return .forange
+        case .alert:   return .fred
         }
     }
-}
-
-private struct ProgressBar: View {
-    let value: Int // 0...100
-    let tint: Color
-
-    var body: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.secondary.opacity(0.15))
-                Capsule()
-                    .fill(tint)
-                    .frame(width: geo.size.width * CGFloat(min(max(value, 0), 100)) / 100.0)
-            }
+    var trailingIcon: String {
+        switch self {
+        case .success: return "checkmark.seal.fill"
+        case .info:    return "info.circle.fill"
+        case .warning: return "exclamationmark.triangle.fill"
+        case .alert:   return "exclamationmark.octagon.fill"
         }
-        .frame(height: 8)
-        .frame(maxWidth: .infinity)
-    }
-}
-
-private struct GraphPlaceholder: View {
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.secondary.opacity(0.12))
-            Text("Graph goes here")
-                .foregroundStyle(.secondary)
-                .font(.system(.subheadline, design: .rounded))
-        }
-        .frame(height: 120)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
-        )
-    }
-}
-
-private struct TopFoodRow: View {
-    let name: String
-    let count: Int
-
-    var body: some View {
-        HStack {
-            Text(name)
-                .foregroundStyle(.fblack)
-                .font(.system(.body, design: .rounded))
-            Spacer()
-            Text("\(count)x")
-                .foregroundStyle(.secondary)
-                .font(.system(.subheadline, design: .rounded))
-        }
-        .padding(10)
-        .background(Color.secondary.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-private struct InsightCard: View {
-    let accent: Color
-    let title: String
-    let subtitle: String
-    let trailingIcon: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Rectangle()
-                .fill(accent)
-                .frame(width: 6)
-                .cornerRadius(3)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(title)
-                    .foregroundStyle(.fblack)
-                    .font(.system(.headline, design: .rounded))
-                Text(subtitle)
-                    .foregroundStyle(.secondary)
-                    .font(.system(.subheadline, design: .rounded))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer()
-
-            Image(systemName: trailingIcon)
-                .foregroundStyle(accent)
-                .font(.system(size: 22, weight: .semibold))
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.fwhite)
-                .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
-        )
-    }
-}
-
-private struct WeightChart: View {
-    let entries: [WeightEntry]
-
-    var body: some View {
-        Chart {
-            ForEach(entries) { entry in
-                LineMark(
-                    x: .value("Date", entry.date),
-                    y: .value("Weight", entry.weight)
-                )
-                .foregroundStyle(Color.fgreen)
-                .interpolationMethod(.catmullRom)
-
-                AreaMark(
-                    x: .value("Date", entry.date),
-                    y: .value("Weight", entry.weight)
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color.fgreen.opacity(0.3), Color.fgreen.opacity(0.05)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .interpolationMethod(.catmullRom)
-
-                PointMark(
-                    x: .value("Date", entry.date),
-                    y: .value("Weight", entry.weight)
-                )
-                .foregroundStyle(Color.fgreen)
-            }
-        }
-        .chartXAxis {
-            AxisMarks(values: .automatic(desiredCount: 5)) { _ in
-                AxisGridLine()
-                AxisValueLabel(format: .dateTime.month().day())
-            }
-        }
-        .chartYAxis {
-            AxisMarks(position: .leading)
-        }
-        .frame(height: 120)
-    }
-}
-
-private struct CalorieChart: View {
-    let history: [(date: Date, calories: Double)]
-
-    var body: some View {
-        Chart {
-            ForEach(history, id: \.date) { entry in
-                LineMark(
-                    x: .value("Date", entry.date),
-                    y: .value("Calories", entry.calories)
-                )
-                .foregroundStyle(Color.forange)
-                .interpolationMethod(.catmullRom)
-
-                AreaMark(
-                    x: .value("Date", entry.date),
-                    y: .value("Calories", entry.calories)
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color.forange.opacity(0.3), Color.forange.opacity(0.05)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .interpolationMethod(.catmullRom)
-
-                PointMark(
-                    x: .value("Date", entry.date),
-                    y: .value("Calories", entry.calories)
-                )
-                .foregroundStyle(Color.forange)
-            }
-        }
-        .chartXAxis {
-            AxisMarks(values: .automatic(desiredCount: 5)) { _ in
-                AxisGridLine()
-                AxisValueLabel(format: .dateTime.month().day())
-            }
-        }
-        .chartYAxis {
-            AxisMarks(position: .leading)
-        }
-        .frame(height: 120)
     }
 }
 

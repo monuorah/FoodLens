@@ -44,7 +44,7 @@ class USDAFoodService {
 
         // Debug: Print raw response
         if let jsonString = String(data: data, encoding: .utf8) {
-            print("📦 USDA Response: \(jsonString.prefix(500))...")
+            print("USDA Response: \(jsonString.prefix(500))...")
         }
 
         let response = try JSONDecoder().decode(USDASearchResponse.self, from: data)
@@ -71,6 +71,9 @@ class USDAFoodService {
 // MARK: - FoodItem Extension for USDA
 
 extension FoodItem {
+    // Common USDA nutrient IDs
+    // 1008 kcal, 1003 protein g, 1005 carbs g, 1004 fat g
+    // 1079 fiber g, 2000 sugars g, 1093 sodium mg
     init(from usdaFood: USDAFood) {
         self.id = usdaFood.fdcId
         self.name = usdaFood.description
@@ -78,22 +81,32 @@ extension FoodItem {
         var cals = 0.0
         var prot = 0.0
         var carb = 0.0
-        var fat = 0.0
+        var fat  = 0.0
+        var fiber = 0.0
+        var sugars = 0.0
+        var sodiumMg = 0.0
 
         for nutrient in usdaFood.foodNutrients {
             switch nutrient.nutrientId {
             case 1008: cals = nutrient.value
             case 1003: prot = nutrient.value
             case 1005: carb = nutrient.value
-            case 1004: fat = nutrient.value
+            case 1004: fat  = nutrient.value
+            case 1079: fiber = nutrient.value
+            case 2000: sugars = nutrient.value
+            case 1093: sodiumMg = nutrient.value
             default: break
             }
         }
 
         self.calories = cals
-        self.protein = prot
-        self.carbs = carb
-        self.fat = fat
+        self.protein  = prot
+        self.carbs    = carb
+        self.fat      = fat
+        self.fiberG   = fiber
+        self.sugarsG  = sugars
+        self.sodiumMg = sodiumMg
         self.servingSize = "100g"
     }
 }
+

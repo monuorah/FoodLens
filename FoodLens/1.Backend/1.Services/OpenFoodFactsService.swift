@@ -76,9 +76,13 @@ class OpenFoodFactsService {
 
         // Extract values (Open Food Facts uses _100g suffix for per-100g values)
         let calories = nutriments.energy_kcal_100g ?? nutriments.energy_kcal ?? 0
-        let protein = nutriments.proteins_100g ?? nutriments.proteins ?? 0
-        let carbs = nutriments.carbohydrates_100g ?? nutriments.carbohydrates ?? 0
-        let fat = nutriments.fat_100g ?? nutriments.fat ?? 0
+        let protein  = nutriments.proteins_100g   ?? nutriments.proteins   ?? 0
+        let carbs    = nutriments.carbohydrates_100g ?? nutriments.carbohydrates ?? 0
+        let fat      = nutriments.fat_100g        ?? nutriments.fat        ?? 0
+
+        let fiberG   = nutriments.fiber_100g  ?? nutriments.fiber  ?? 0
+        let sugarsG  = nutriments.sugars_100g ?? nutriments.sugars ?? 0
+        let sodiumMg = nutriments.sodium_100g ?? nutriments.sodium ?? 0
 
         // Get serving size if available
         let servingSize = product.serving_size ?? "100g"
@@ -90,7 +94,10 @@ class OpenFoodFactsService {
             protein: protein,
             carbs: carbs,
             fat: fat,
-            servingSize: servingSize
+            servingSize: servingSize,
+            fiberG: fiberG,
+            sugarsG: sugarsG,
+            sodiumMg: sodiumMg
         )
     }
 }
@@ -115,21 +122,35 @@ private struct OFFNutriments: Codable {
     let proteins_100g: Double?
     let carbohydrates_100g: Double?
     let fat_100g: Double?
+    let fiber_100g: Double?
+    let sugars_100g: Double?
+    let sodium_100g: Double?
 
     // Fallback values
     let energy_kcal: Double?
     let proteins: Double?
     let carbohydrates: Double?
     let fat: Double?
+    let fiber: Double?
+    let sugars: Double?
+    let sodium: Double?
 
     enum CodingKeys: String, CodingKey {
         case energy_kcal_100g = "energy-kcal_100g"
         case proteins_100g = "proteins_100g"
         case carbohydrates_100g = "carbohydrates_100g"
         case fat_100g = "fat_100g"
+        case fiber_100g = "fiber_100g"
+        case sugars_100g = "sugars_100g"
+        case sodium_100g = "sodium_100g"
+
         case energy_kcal = "energy-kcal"
         case proteins
         case carbohydrates
         case fat
+        case fiber
+        case sugars
+        case sodium
     }
 }
+

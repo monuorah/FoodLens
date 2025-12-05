@@ -37,6 +37,11 @@ struct LoggedMeal: Codable, Identifiable {
     var totalProtein: Double  { foodItem.protein  * servings }
     var totalCarbs: Double    { foodItem.carbs    * servings }
     var totalFat: Double      { foodItem.fat      * servings }
+
+    // New totals
+    var totalFiberG: Double   { foodItem.fiberG   * servings }
+    var totalSugarsG: Double  { foodItem.sugarsG  * servings }
+    var totalSodiumMg: Double { foodItem.sodiumMg * servings }
 }
 
 // Make it comparable/hashable by id only (no need for FoodItem to be Hashable)
@@ -96,6 +101,19 @@ class MealStorage {
         return Dictionary(grouping: today, by: { $0.mealType })
     }
 
+    // MARK: - New: Date-range helpers
+
+    func meals(in interval: DateInterval) -> [LoggedMeal] {
+        let all = loadMeals()
+        return all.filter { interval.contains($0.date) }
+    }
+
+    func mealsForLastDays(_ days: Int, from reference: Date = Date()) -> [LoggedMeal] {
+        let calendar = Calendar.current
+        guard let start = calendar.date(byAdding: .day, value: -(max(days, 0)), to: reference) else { return [] }
+        return meals(in: DateInterval(start: start, end: reference))
+    }
+
     // MARK: - Helpers
 
     private func persist(_ meals: [LoggedMeal]) {
@@ -104,3 +122,4 @@ class MealStorage {
         }
     }
 }
+
